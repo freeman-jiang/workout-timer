@@ -16,6 +16,12 @@
 </head>
 <body class="bg-slate-900 text-white min-h-screen transition-colors duration-300">
 
+  <!-- Preload audio elements (hidden) -->
+  <audio id="audioCountdown" preload="auto" src="audio/countdown.mp3"></audio>
+  <audio id="audioPhase" preload="auto" src="audio/phase.mp3"></audio>
+  <audio id="audioRest" preload="auto" src="audio/rest.mp3"></audio>
+  <audio id="audioComplete" preload="auto" src="audio/complete.mp3"></audio>
+
   <!-- Timer Screen -->
   <div id="timerScreen" class="screen flex flex-col items-center justify-center min-h-screen p-6">
     <div id="phaseLabel" class="text-lg tracking-[0.2em] uppercase opacity-80 mb-2">Ready</div>
@@ -113,36 +119,46 @@
     const WARMUP_TIME = 5;
 
     // Timestamp-based timing for accuracy across backgrounding
-    let phaseStartTime = null;      // When current phase started (ms)
-    let phaseDuration = null;       // Duration of current phase (seconds)
-    let pausedTimeRemaining = null; // Time left when paused (seconds)
-    let lastBeepedAt = null;        // Track countdown beeps
+    let phaseStartTime = null;
+    let phaseDuration = null;
+    let pausedTimeRemaining = null;
+    let lastBeepedAt = null;
 
-    // ============ iOS Audio Unlock ============
-    // Silent audio element keeps iOS audio session alive
+    // ============ HTML5 Audio Elements ============
+    const sounds = {
+      countdown: document.getElementById('audioCountdown'),
+      phase: document.getElementById('audioPhase'),
+      rest: document.getElementById('audioRest'),
+      complete: document.getElementById('audioComplete')
+    };
+
+    // Silent audio for keeping iOS audio session alive
     let silentAudio = null;
     let audioUnlocked = false;
 
+    // Minimal silent MP3 (keeps audio session active)
     const SILENT_MP3 = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRBn3AAAAAAAAAAAAAAAAAAAAAP/7kGQAAANUMEoFPeACNQV40KEQBAAAA0gAAAAgAAA0gAAABExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//tQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==';
 
     const unlockAudio = () => {
       if (audioUnlocked) return;
       
-      // Create and play silent audio to unlock iOS audio session
+      // Create and play silent audio loop to keep iOS audio session alive
       silentAudio = document.createElement('audio');
-      silentAudio.setAttribute('x-webkit-airplay', 'deny'); // Hide from AirPlay
+      silentAudio.setAttribute('x-webkit-airplay', 'deny');
       silentAudio.preload = 'auto';
       silentAudio.loop = true;
       silentAudio.src = SILENT_MP3;
       silentAudio.play().catch(() => {});
       
-      // Also init Web Audio context
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+      // Also "prime" all sound effects by playing them silently
+      Object.values(sounds).forEach(audio => {
+        audio.volume = 0.01;
+        audio.play().then(() => {
+          audio.pause();
+          audio.currentTime = 0;
+          audio.volume = 1;
+        }).catch(() => {});
+      });
       
       audioUnlocked = true;
       console.log('Audio unlocked');
@@ -153,30 +169,25 @@
       document.addEventListener(evt, unlockAudio, { once: false, passive: true });
     });
 
-    // ============ Web Audio Beeps ============
-    let audioCtx = null;
-    
-    const playBeep = (freq = 800, dur = 150, count = 1) => {
-      if (!audioCtx) {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      }
-      if (audioCtx.state === 'suspended') {
-        audioCtx.resume();
-      }
+    // Play a sound effect using HTML5 Audio (better iOS compatibility)
+    const playSound = (name, times = 1) => {
+      const audio = sounds[name];
+      if (!audio) return;
       
-      for (let i = 0; i < count; i++) {
-        const startTime = audioCtx.currentTime + (i * 0.2);
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.frequency.value = freq;
-        osc.type = 'sine';
-        gain.gain.setValueAtTime(0.3, startTime);
-        gain.gain.exponentialRampToValueAtTime(0.01, startTime + dur / 1000);
-        osc.start(startTime);
-        osc.stop(startTime + dur / 1000);
-      }
+      const playOnce = (remaining) => {
+        if (remaining <= 0) return;
+        
+        // Clone the audio element for overlapping plays
+        const clone = audio.cloneNode();
+        clone.volume = 1;
+        clone.play().catch(() => {});
+        
+        if (remaining > 1) {
+          setTimeout(() => playOnce(remaining - 1), 200);
+        }
+      };
+      
+      playOnce(times);
     };
 
     // ============ Media Session API (Lock Screen) ============
@@ -233,7 +244,6 @@
       return `${Math.floor(secs/60).toString().padStart(2,'0')}:${(secs%60).toString().padStart(2,'0')}`;
     };
 
-    // Calculate time remaining from timestamps (accurate even after background)
     const getTimeRemaining = () => {
       if (isPaused && pausedTimeRemaining !== null) {
         return pausedTimeRemaining;
@@ -273,7 +283,7 @@
       // Countdown beeps (3, 2, 1)
       const secondsLeft = Math.ceil(timeRemaining);
       if (secondsLeft <= 3 && secondsLeft > 0 && lastBeepedAt !== secondsLeft) {
-        playBeep(600, 100);
+        playSound('countdown');
         lastBeepedAt = secondsLeft;
       }
       
@@ -282,19 +292,18 @@
         lastBeepedAt = null;
         
         if (currentPhase === 'warmup') {
-          playBeep(1000, 200, 2);
+          playSound('phase', 2);
           currentPhase = 'work';
           phaseDuration = getWorkTime();
           phaseStartTime = Date.now();
         } else if (currentPhase === 'work') {
-          playBeep(1000, 200, 2);
+          playSound('phase', 2);
           currentPhase = 'rest';
           phaseDuration = getRestTime();
           phaseStartTime = Date.now();
         } else {
-          // End of rest
           if (currentRound >= getRounds()) {
-            playBeep(1200, 300, 3);
+            playSound('complete', 3);
             stopTimer();
             el.phaseLabel.textContent = 'Done!';
             el.exerciseName.textContent = '';
@@ -302,7 +311,7 @@
             el.nextUp.textContent = '';
             return;
           }
-          playBeep(800, 200, 2);
+          playSound('rest', 2);
           currentRound++;
           currentPhase = 'work';
           phaseDuration = getWorkTime();
@@ -317,14 +326,12 @@
       unlockAudio();
       
       if (!isRunning && !isPaused) {
-        // Fresh start
         currentPhase = 'warmup';
         currentRound = 1;
         phaseDuration = WARMUP_TIME;
         phaseStartTime = Date.now();
         lastBeepedAt = null;
       } else if (isPaused && pausedTimeRemaining !== null) {
-        // Resume from pause - adjust start time to account for remaining time
         phaseStartTime = Date.now() - ((phaseDuration - pausedTimeRemaining) * 1000);
         pausedTimeRemaining = null;
       }
@@ -335,8 +342,7 @@
       el.settings.classList.add('hidden');
       updateDisplay();
       
-      // Use requestAnimationFrame for smooth updates, setInterval for background
-      intervalId = setInterval(tick, 100); // 100ms for responsive UI
+      intervalId = setInterval(tick, 100);
     };
 
     const pauseTimer = () => {
@@ -373,10 +379,9 @@
       el.timer.textContent = formatTime(getWorkTime());
     };
 
-    // ============ Visibility Change (Background/Foreground) ============
+    // ============ Visibility Change ============
     document.addEventListener('visibilitychange', () => {
       if (document.visibilityState === 'visible' && isRunning) {
-        // Coming back from background - recalculate and update immediately
         tick();
         console.log('Returned from background, time remaining:', getTimeRemaining());
       }
