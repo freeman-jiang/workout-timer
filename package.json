@@ -2,8 +2,8 @@
   "name": "workout-timer",
   "type": "module",
   "scripts": {
-    "build": "bunx tailwindcss -i src/input.css -o dist/output.css --minify",
-    "dev": "bunx tailwindcss -i src/input.css -o dist/output.css --watch"
+    "build": "npx tailwindcss -i src/input.css -o dist/output.css --minify",
+    "dev": "npx tailwindcss -i src/input.css -o dist/output.css --watch"
   },
   "devDependencies": {
     "@tailwindcss/cli": "^4.1.18",
