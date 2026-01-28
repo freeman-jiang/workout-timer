@@ -1,0 +1,8 @@
+@import "tailwindcss";
+
+/* Custom color utilities */
+@theme {
+  --color-work: #064e3b;
+  --color-rest: #1e3a5f;
+  --color-warmup: #4a1a6b;
+}
