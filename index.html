@@ -23,23 +23,20 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      justify-content: center;
       padding: 20px;
       transition: background 0.3s ease;
     }
 
-    body.work {
-      background: #064e3b;
-    }
+    body.work { background: #064e3b; }
+    body.rest { background: #1e3a5f; }
+    body.warmup { background: #4a1a6b; }
 
-    body.rest {
-      background: #1e3a5f;
-    }
+    .screen { display: none; width: 100%; max-width: 400px; }
+    .screen.active { display: flex; flex-direction: column; align-items: center; }
 
-    body.warmup {
-      background: #4a1a6b;
-    }
-
+    /* Timer Screen */
+    #timerScreen { justify-content: center; min-height: 80vh; }
+    
     .phase-label {
       font-size: 1.5rem;
       text-transform: uppercase;
@@ -48,24 +45,39 @@
       margin-bottom: 10px;
     }
 
+    .exercise-name {
+      font-size: 2rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
     .timer {
-      font-size: 8rem;
+      font-size: 7rem;
       font-weight: 200;
       font-variant-numeric: tabular-nums;
       line-height: 1;
-      margin-bottom: 20px;
+      margin-bottom: 10px;
     }
 
     .round-info {
       font-size: 1.2rem;
       opacity: 0.7;
-      margin-bottom: 40px;
+      margin-bottom: 10px;
+    }
+
+    .next-up {
+      font-size: 1rem;
+      opacity: 0.6;
+      margin-bottom: 30px;
     }
 
     .controls {
       display: flex;
       gap: 15px;
-      margin-bottom: 40px;
+      margin-bottom: 30px;
+      flex-wrap: wrap;
+      justify-content: center;
     }
 
     button {
@@ -80,20 +92,11 @@
       backdrop-filter: blur(10px);
     }
 
-    button:hover {
-      background: rgba(255, 255, 255, 0.25);
-      transform: scale(1.05);
-    }
-
-    button:active {
-      transform: scale(0.98);
-    }
-
-    button.primary {
-      background: rgba(255, 255, 255, 0.25);
-      padding: 18px 50px;
-      font-size: 1.3rem;
-    }
+    button:hover { background: rgba(255, 255, 255, 0.25); transform: scale(1.05); }
+    button:active { transform: scale(0.98); }
+    button.primary { background: rgba(255, 255, 255, 0.25); padding: 18px 50px; font-size: 1.3rem; }
+    button.small { padding: 10px 20px; font-size: 0.9rem; }
+    button.danger { background: rgba(220, 38, 38, 0.4); }
 
     .settings {
       display: flex;
@@ -103,6 +106,7 @@
       padding: 25px;
       border-radius: 20px;
       backdrop-filter: blur(10px);
+      width: 100%;
     }
 
     .setting-row {
@@ -112,13 +116,9 @@
       gap: 20px;
     }
 
-    .setting-row label {
-      font-size: 1rem;
-      opacity: 0.9;
-    }
+    .setting-row label { font-size: 1rem; opacity: 0.9; }
 
-    .setting-row input {
-      width: 80px;
+    .setting-row input, .setting-row select {
       padding: 10px 15px;
       font-size: 1.1rem;
       border: none;
@@ -128,66 +128,208 @@
       text-align: center;
     }
 
-    .setting-row input:focus {
+    .setting-row input[type="number"] { width: 80px; }
+    .setting-row input[type="text"] { width: 100%; text-align: left; }
+    .setting-row select { width: 180px; }
+
+    .setting-row input:focus, .setting-row select:focus {
       outline: 2px solid rgba(255, 255, 255, 0.5);
     }
 
-    .hidden {
-      display: none !important;
+    select option { background: #1a1a2e; color: white; }
+
+    .hidden { display: none !important; }
+
+    /* Workouts Screen */
+    #workoutsScreen { padding-top: 20px; }
+    
+    .screen-title {
+      font-size: 1.8rem;
+      margin-bottom: 20px;
+      text-align: center;
     }
 
+    .workout-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+
+    .workout-item {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 15px 20px;
+      border-radius: 15px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .workout-item:hover { background: rgba(255, 255, 255, 0.2); }
+
+    .workout-item-info h3 { font-size: 1.1rem; margin-bottom: 4px; }
+    .workout-item-info p { font-size: 0.85rem; opacity: 0.7; }
+
+    .workout-item-actions { display: flex; gap: 8px; }
+    .workout-item-actions button { padding: 8px 12px; font-size: 0.8rem; }
+
+    /* Editor Screen */
+    #editorScreen { padding-top: 20px; }
+
+    .exercise-list {
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin: 15px 0;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+
+    .exercise-item {
+      background: rgba(255, 255, 255, 0.1);
+      padding: 12px 15px;
+      border-radius: 10px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .exercise-item span { font-size: 1rem; }
+    .exercise-item button { padding: 5px 10px; font-size: 0.8rem; }
+
+    .add-exercise {
+      display: flex;
+      gap: 10px;
+      width: 100%;
+      margin-bottom: 20px;
+    }
+
+    .add-exercise input { flex: 1; }
+
     @media (max-width: 480px) {
-      .timer {
-        font-size: 5rem;
-      }
-      
-      .controls {
-        flex-direction: column;
-        width: 100%;
-      }
-      
-      button {
-        width: 100%;
-      }
+      .timer { font-size: 5rem; }
+      .exercise-name { font-size: 1.5rem; }
+      .controls { flex-direction: column; width: 100%; }
+      button { width: 100%; }
+      .workout-item-actions { flex-direction: column; }
     }
   </style>
 </head>
 <body>
-  <div class="phase-label" id="phaseLabel">Ready</div>
-  <div class="timer" id="timer">00:00</div>
-  <div class="round-info" id="roundInfo">-</div>
 
-  <div class="controls" id="controls">
-    <button class="primary" id="startBtn">Start</button>
-    <button id="resetBtn">Reset</button>
+  <!-- Timer Screen -->
+  <div id="timerScreen" class="screen active">
+    <div class="phase-label" id="phaseLabel">Ready</div>
+    <div class="exercise-name" id="exerciseName"></div>
+    <div class="timer" id="timer">00:45</div>
+    <div class="round-info" id="roundInfo">-</div>
+    <div class="next-up" id="nextUp"></div>
+
+    <div class="controls" id="controls">
+      <button class="primary" id="startBtn">Start</button>
+      <button id="resetBtn">Reset</button>
+    </div>
+
+    <div class="settings" id="settings">
+      <div class="setting-row">
+        <label>Workout</label>
+        <select id="workoutSelect">
+          <option value="">Quick Timer</option>
+        </select>
+      </div>
+      <div class="setting-row" id="quickSettings">
+        <label>Work / Rest</label>
+        <div style="display:flex;gap:10px;align-items:center;">
+          <input type="number" id="workTime" value="45" min="5" max="300" style="width:60px">
+          <span>/</span>
+          <input type="number" id="restTime" value="15" min="5" max="300" style="width:60px">
+        </div>
+      </div>
+      <div class="setting-row">
+        <label>Rounds</label>
+        <input type="number" id="rounds" value="8" min="1" max="50">
+      </div>
+      <div style="display:flex;gap:10px;margin-top:10px;">
+        <button class="small" id="manageWorkoutsBtn" style="flex:1">Manage Workouts</button>
+      </div>
+    </div>
   </div>
 
-  <div class="settings" id="settings">
-    <div class="setting-row">
-      <label>Work (sec)</label>
-      <input type="number" id="workTime" value="45" min="5" max="300">
+  <!-- Workouts List Screen -->
+  <div id="workoutsScreen" class="screen">
+    <h1 class="screen-title">My Workouts</h1>
+    <div class="workout-list" id="workoutList"></div>
+    <div class="controls">
+      <button class="primary" id="newWorkoutBtn">+ New Workout</button>
+      <button id="backToTimerBtn">Back</button>
     </div>
-    <div class="setting-row">
-      <label>Rest (sec)</label>
-      <input type="number" id="restTime" value="15" min="5" max="300">
+  </div>
+
+  <!-- Workout Editor Screen -->
+  <div id="editorScreen" class="screen">
+    <h1 class="screen-title" id="editorTitle">New Workout</h1>
+    <div class="settings" style="margin-bottom:20px;">
+      <div class="setting-row">
+        <label>Name</label>
+        <input type="text" id="workoutName" placeholder="e.g. Upper Body">
+      </div>
+      <div class="setting-row">
+        <label>Work (sec)</label>
+        <input type="number" id="editorWorkTime" value="45" min="5" max="300">
+      </div>
+      <div class="setting-row">
+        <label>Rest (sec)</label>
+        <input type="number" id="editorRestTime" value="15" min="5" max="300">
+      </div>
     </div>
-    <div class="setting-row">
-      <label>Rounds</label>
-      <input type="number" id="rounds" value="8" min="1" max="50">
+
+    <h3 style="margin-bottom:10px;opacity:0.8;">Exercises</h3>
+    <div class="add-exercise">
+      <input type="text" id="newExerciseInput" placeholder="Add exercise...">
+      <button id="addExerciseBtn">Add</button>
+    </div>
+    <div class="exercise-list" id="exerciseList"></div>
+
+    <div class="controls" style="margin-top:20px;">
+      <button class="primary" id="saveWorkoutBtn">Save</button>
+      <button id="cancelEditBtn">Cancel</button>
+      <button class="danger hidden" id="deleteWorkoutBtn">Delete</button>
     </div>
   </div>
 
   <script>
-    // State
+    // ============ Storage ============
+    const STORAGE_KEY = 'workout-timer-workouts';
+
+    function loadWorkouts() {
+      try {
+        return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+      } catch { return []; }
+    }
+
+    function saveWorkouts(workouts) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(workouts));
+    }
+
+    // ============ State ============
+    let workouts = loadWorkouts();
+    let currentWorkout = null;
+    let editingWorkoutId = null;
+    let editorExercises = [];
+
     let isRunning = false;
     let isPaused = false;
-    let currentPhase = 'warmup'; // 'warmup', 'work', or 'rest'
+    let currentPhase = 'warmup';
     let currentRound = 1;
     let timeRemaining = 0;
     let intervalId = null;
     const WARMUP_TIME = 5;
 
-    // Audio context for beeps
+    // ============ Audio ============
     let audioCtx = null;
 
     function initAudio() {
@@ -198,37 +340,83 @@
 
     function playBeep(frequency = 800, duration = 150, count = 1) {
       if (!audioCtx) return;
-      
       for (let i = 0; i < count; i++) {
         setTimeout(() => {
           const oscillator = audioCtx.createOscillator();
           const gainNode = audioCtx.createGain();
-          
           oscillator.connect(gainNode);
           gainNode.connect(audioCtx.destination);
-          
           oscillator.frequency.value = frequency;
           oscillator.type = 'sine';
-          
           gainNode.gain.setValueAtTime(0.3, audioCtx.currentTime);
           gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + duration / 1000);
-          
           oscillator.start(audioCtx.currentTime);
           oscillator.stop(audioCtx.currentTime + duration / 1000);
         }, i * 200);
       }
     }
 
-    // DOM elements
-    const phaseLabel = document.getElementById('phaseLabel');
-    const timerDisplay = document.getElementById('timer');
-    const roundInfo = document.getElementById('roundInfo');
-    const startBtn = document.getElementById('startBtn');
-    const resetBtn = document.getElementById('resetBtn');
-    const settings = document.getElementById('settings');
-    const workTimeInput = document.getElementById('workTime');
-    const restTimeInput = document.getElementById('restTime');
-    const roundsInput = document.getElementById('rounds');
+    // ============ DOM ============
+    const screens = {
+      timer: document.getElementById('timerScreen'),
+      workouts: document.getElementById('workoutsScreen'),
+      editor: document.getElementById('editorScreen')
+    };
+
+    const timerEls = {
+      phaseLabel: document.getElementById('phaseLabel'),
+      exerciseName: document.getElementById('exerciseName'),
+      timer: document.getElementById('timer'),
+      roundInfo: document.getElementById('roundInfo'),
+      nextUp: document.getElementById('nextUp'),
+      startBtn: document.getElementById('startBtn'),
+      resetBtn: document.getElementById('resetBtn'),
+      settings: document.getElementById('settings'),
+      workoutSelect: document.getElementById('workoutSelect'),
+      quickSettings: document.getElementById('quickSettings'),
+      workTime: document.getElementById('workTime'),
+      restTime: document.getElementById('restTime'),
+      rounds: document.getElementById('rounds')
+    };
+
+    const editorEls = {
+      title: document.getElementById('editorTitle'),
+      name: document.getElementById('workoutName'),
+      workTime: document.getElementById('editorWorkTime'),
+      restTime: document.getElementById('editorRestTime'),
+      exerciseList: document.getElementById('exerciseList'),
+      newExerciseInput: document.getElementById('newExerciseInput'),
+      deleteBtn: document.getElementById('deleteWorkoutBtn')
+    };
+
+    // ============ Navigation ============
+    function showScreen(name) {
+      Object.values(screens).forEach(s => s.classList.remove('active'));
+      screens[name].classList.add('active');
+    }
+
+    // ============ Timer Logic ============
+    function getWorkTime() {
+      return currentWorkout ? currentWorkout.workTime : parseInt(timerEls.workTime.value);
+    }
+
+    function getRestTime() {
+      return currentWorkout ? currentWorkout.restTime : parseInt(timerEls.restTime.value);
+    }
+
+    function getRounds() {
+      return currentWorkout ? currentWorkout.exercises.length : parseInt(timerEls.rounds.value);
+    }
+
+    function getCurrentExercise() {
+      if (!currentWorkout) return null;
+      return currentWorkout.exercises[currentRound - 1] || null;
+    }
+
+    function getNextExercise() {
+      if (!currentWorkout) return null;
+      return currentWorkout.exercises[currentRound] || null;
+    }
 
     function formatTime(seconds) {
       const mins = Math.floor(seconds / 60);
@@ -237,15 +425,22 @@
     }
 
     function updateDisplay() {
-      timerDisplay.textContent = formatTime(timeRemaining);
+      timerEls.timer.textContent = formatTime(timeRemaining);
+
       if (currentPhase === 'warmup') {
-        phaseLabel.textContent = 'Get Ready';
-        roundInfo.textContent = 'Starting soon...';
+        timerEls.phaseLabel.textContent = 'Get Ready';
+        timerEls.exerciseName.textContent = currentWorkout ? currentWorkout.exercises[0] || '' : '';
+        timerEls.roundInfo.textContent = 'Starting soon...';
+        timerEls.nextUp.textContent = '';
       } else {
-        phaseLabel.textContent = currentPhase === 'work' ? 'Work' : 'Rest';
-        roundInfo.textContent = `Round ${currentRound} of ${parseInt(roundsInput.value)}`;
+        timerEls.phaseLabel.textContent = currentPhase === 'work' ? 'Work' : 'Rest';
+        timerEls.exerciseName.textContent = getCurrentExercise() || '';
+        timerEls.roundInfo.textContent = `Round ${currentRound} of ${getRounds()}`;
+        
+        const next = currentPhase === 'work' ? null : getNextExercise();
+        timerEls.nextUp.textContent = next ? `Next: ${next}` : '';
       }
-      
+
       document.body.classList.remove('work', 'rest', 'warmup');
       if (isRunning || isPaused) {
         document.body.classList.add(currentPhase);
@@ -255,39 +450,31 @@
     function tick() {
       if (timeRemaining > 0) {
         timeRemaining--;
-        
-        // Countdown beeps for last 3 seconds
-        if (timeRemaining <= 3 && timeRemaining > 0) {
-          playBeep(600, 100);
-        }
-        
+        if (timeRemaining <= 3 && timeRemaining > 0) playBeep(600, 100);
         updateDisplay();
       } else {
-        // Phase complete
         if (currentPhase === 'warmup') {
-          // Warmup done, start first work period
           playBeep(1000, 200, 2);
           currentPhase = 'work';
-          timeRemaining = parseInt(workTimeInput.value);
+          timeRemaining = getWorkTime();
         } else if (currentPhase === 'work') {
-          // Work done, start rest
           playBeep(1000, 200, 2);
           currentPhase = 'rest';
-          timeRemaining = parseInt(restTimeInput.value);
+          timeRemaining = getRestTime();
         } else {
-          // Rest done, next round or finish
-          if (currentRound >= parseInt(roundsInput.value)) {
-            // Workout complete!
+          if (currentRound >= getRounds()) {
             playBeep(1200, 300, 3);
             stopTimer();
-            phaseLabel.textContent = 'Done!';
-            roundInfo.textContent = 'Workout complete';
+            timerEls.phaseLabel.textContent = 'Done!';
+            timerEls.exerciseName.textContent = '';
+            timerEls.roundInfo.textContent = 'Workout complete';
+            timerEls.nextUp.textContent = '';
             return;
           } else {
             playBeep(800, 200, 2);
             currentRound++;
             currentPhase = 'work';
-            timeRemaining = parseInt(workTimeInput.value);
+            timeRemaining = getWorkTime();
           }
         }
         updateDisplay();
@@ -296,19 +483,15 @@
 
     function startTimer() {
       initAudio();
-      
       if (!isRunning && !isPaused) {
-        // Fresh start - begin with warmup
         currentPhase = 'warmup';
         currentRound = 1;
         timeRemaining = WARMUP_TIME;
       }
-      
       isRunning = true;
       isPaused = false;
-      startBtn.textContent = 'Pause';
-      settings.classList.add('hidden');
-      
+      timerEls.startBtn.textContent = 'Pause';
+      timerEls.settings.classList.add('hidden');
       updateDisplay();
       intervalId = setInterval(tick, 1000);
     }
@@ -316,7 +499,7 @@
     function pauseTimer() {
       isRunning = false;
       isPaused = true;
-      startBtn.textContent = 'Resume';
+      timerEls.startBtn.textContent = 'Resume';
       clearInterval(intervalId);
     }
 
@@ -324,47 +507,190 @@
       isRunning = false;
       isPaused = false;
       clearInterval(intervalId);
-      startBtn.textContent = 'Start';
-      settings.classList.remove('hidden');
+      timerEls.startBtn.textContent = 'Start';
+      timerEls.settings.classList.remove('hidden');
     }
 
     function resetTimer() {
       stopTimer();
       currentPhase = 'warmup';
       currentRound = 1;
-      timeRemaining = WARMUP_TIME;
-      phaseLabel.textContent = 'Ready';
-      roundInfo.textContent = '-';
+      timerEls.phaseLabel.textContent = 'Ready';
+      timerEls.exerciseName.textContent = '';
+      timerEls.roundInfo.textContent = '-';
+      timerEls.nextUp.textContent = '';
       document.body.classList.remove('work', 'rest', 'warmup');
-      timerDisplay.textContent = formatTime(parseInt(workTimeInput.value));
+      timerEls.timer.textContent = formatTime(getWorkTime());
     }
 
-    // Event listeners
-    startBtn.addEventListener('click', () => {
-      if (isRunning) {
-        pauseTimer();
+    // ============ Workout Selection ============
+    function populateWorkoutSelect() {
+      timerEls.workoutSelect.innerHTML = '<option value="">Quick Timer</option>';
+      workouts.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w.id;
+        opt.textContent = w.name;
+        timerEls.workoutSelect.appendChild(opt);
+      });
+    }
+
+    function selectWorkout(id) {
+      if (id) {
+        currentWorkout = workouts.find(w => w.id === id) || null;
+        timerEls.quickSettings.classList.add('hidden');
+        timerEls.rounds.parentElement.classList.add('hidden');
       } else {
-        startTimer();
+        currentWorkout = null;
+        timerEls.quickSettings.classList.remove('hidden');
+        timerEls.rounds.parentElement.classList.remove('hidden');
       }
+      resetTimer();
+    }
+
+    // ============ Workouts List ============
+    function renderWorkoutList() {
+      const list = document.getElementById('workoutList');
+      if (workouts.length === 0) {
+        list.innerHTML = '<p style="text-align:center;opacity:0.6;">No workouts yet. Create one!</p>';
+        return;
+      }
+      list.innerHTML = workouts.map(w => `
+        <div class="workout-item" data-id="${w.id}">
+          <div class="workout-item-info">
+            <h3>${w.name}</h3>
+            <p>${w.exercises.length} exercises · ${w.workTime}s work / ${w.restTime}s rest</p>
+          </div>
+          <div class="workout-item-actions">
+            <button onclick="editWorkout('${w.id}')">Edit</button>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    // ============ Workout Editor ============
+    function openEditor(workoutId = null) {
+      editingWorkoutId = workoutId;
+      if (workoutId) {
+        const w = workouts.find(x => x.id === workoutId);
+        editorEls.title.textContent = 'Edit Workout';
+        editorEls.name.value = w.name;
+        editorEls.workTime.value = w.workTime;
+        editorEls.restTime.value = w.restTime;
+        editorExercises = [...w.exercises];
+        editorEls.deleteBtn.classList.remove('hidden');
+      } else {
+        editorEls.title.textContent = 'New Workout';
+        editorEls.name.value = '';
+        editorEls.workTime.value = 45;
+        editorEls.restTime.value = 15;
+        editorExercises = [];
+        editorEls.deleteBtn.classList.add('hidden');
+      }
+      renderExerciseList();
+      showScreen('editor');
+    }
+
+    function renderExerciseList() {
+      if (editorExercises.length === 0) {
+        editorEls.exerciseList.innerHTML = '<p style="text-align:center;opacity:0.6;padding:20px;">No exercises added</p>';
+        return;
+      }
+      editorEls.exerciseList.innerHTML = editorExercises.map((ex, i) => `
+        <div class="exercise-item">
+          <span>${i + 1}. ${ex}</span>
+          <button onclick="removeExercise(${i})">✕</button>
+        </div>
+      `).join('');
+    }
+
+    function addExercise() {
+      const input = editorEls.newExerciseInput;
+      const name = input.value.trim();
+      if (name) {
+        editorExercises.push(name);
+        input.value = '';
+        renderExerciseList();
+      }
+    }
+
+    function removeExercise(index) {
+      editorExercises.splice(index, 1);
+      renderExerciseList();
+    }
+
+    function saveWorkout() {
+      const name = editorEls.name.value.trim();
+      if (!name) { alert('Please enter a workout name'); return; }
+      if (editorExercises.length === 0) { alert('Please add at least one exercise'); return; }
+
+      const workout = {
+        id: editingWorkoutId || crypto.randomUUID(),
+        name,
+        workTime: parseInt(editorEls.workTime.value),
+        restTime: parseInt(editorEls.restTime.value),
+        exercises: [...editorExercises]
+      };
+
+      if (editingWorkoutId) {
+        const idx = workouts.findIndex(w => w.id === editingWorkoutId);
+        if (idx >= 0) workouts[idx] = workout;
+      } else {
+        workouts.push(workout);
+      }
+
+      saveWorkouts(workouts);
+      populateWorkoutSelect();
+      showScreen('workouts');
+      renderWorkoutList();
+    }
+
+    function deleteWorkout() {
+      if (!editingWorkoutId) return;
+      if (!confirm('Delete this workout?')) return;
+      workouts = workouts.filter(w => w.id !== editingWorkoutId);
+      saveWorkouts(workouts);
+      populateWorkoutSelect();
+      if (currentWorkout?.id === editingWorkoutId) {
+        currentWorkout = null;
+        timerEls.workoutSelect.value = '';
+        selectWorkout('');
+      }
+      showScreen('workouts');
+      renderWorkoutList();
+    }
+
+    // Make functions global for onclick handlers
+    window.editWorkout = (id) => openEditor(id);
+    window.removeExercise = removeExercise;
+
+    // ============ Event Listeners ============
+    timerEls.startBtn.addEventListener('click', () => isRunning ? pauseTimer() : startTimer());
+    timerEls.resetBtn.addEventListener('click', resetTimer);
+    timerEls.workoutSelect.addEventListener('change', (e) => selectWorkout(e.target.value));
+    timerEls.workTime.addEventListener('change', () => { if (!isRunning && !isPaused) timerEls.timer.textContent = formatTime(getWorkTime()); });
+
+    document.getElementById('manageWorkoutsBtn').addEventListener('click', () => {
+      renderWorkoutList();
+      showScreen('workouts');
     });
 
-    resetBtn.addEventListener('click', resetTimer);
-
-    // Update display when settings change
-    workTimeInput.addEventListener('change', () => {
-      if (!isRunning && !isPaused) {
-        timerDisplay.textContent = formatTime(parseInt(workTimeInput.value));
-      }
+    document.getElementById('backToTimerBtn').addEventListener('click', () => showScreen('timer'));
+    document.getElementById('newWorkoutBtn').addEventListener('click', () => openEditor());
+    document.getElementById('addExerciseBtn').addEventListener('click', addExercise);
+    editorEls.newExerciseInput.addEventListener('keypress', (e) => { if (e.key === 'Enter') addExercise(); });
+    document.getElementById('saveWorkoutBtn').addEventListener('click', saveWorkout);
+    document.getElementById('cancelEditBtn').addEventListener('click', () => {
+      showScreen('workouts');
+      renderWorkoutList();
     });
+    document.getElementById('deleteWorkoutBtn').addEventListener('click', deleteWorkout);
 
-    // Initialize display
-    timerDisplay.textContent = formatTime(parseInt(workTimeInput.value));
+    // ============ Init ============
+    populateWorkoutSelect();
+    timerEls.timer.textContent = formatTime(parseInt(timerEls.workTime.value));
 
-    // Register service worker
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.register('sw.js')
-        .then(reg => console.log('SW registered'))
-        .catch(err => console.log('SW registration failed:', err));
+      navigator.serviceWorker.register('sw.js').catch(err => console.log('SW error:', err));
     }
   </script>
 </body>
