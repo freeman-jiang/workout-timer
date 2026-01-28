@@ -109,24 +109,96 @@
     let editingWorkoutId = null;
     let editorExercises = [];
     let isRunning = false, isPaused = false;
-    let currentPhase = 'warmup', currentRound = 1, timeRemaining = 0, intervalId = null;
+    let currentPhase = 'warmup', currentRound = 1, intervalId = null;
     const WARMUP_TIME = 5;
 
-    // ============ Audio ============
-    let audioCtx = null;
-    const initAudio = () => { if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); };
-    const playBeep = (freq = 800, dur = 150, count = 1) => {
-      if (!audioCtx) return;
-      for (let i = 0; i < count; i++) {
-        setTimeout(() => {
-          const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
-          osc.connect(gain); gain.connect(audioCtx.destination);
-          osc.frequency.value = freq; osc.type = 'sine';
-          gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
-          gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + dur / 1000);
-          osc.start(); osc.stop(audioCtx.currentTime + dur / 1000);
-        }, i * 200);
+    // Timestamp-based timing for accuracy across backgrounding
+    let phaseStartTime = null;      // When current phase started (ms)
+    let phaseDuration = null;       // Duration of current phase (seconds)
+    let pausedTimeRemaining = null; // Time left when paused (seconds)
+    let lastBeepedAt = null;        // Track countdown beeps
+
+    // ============ iOS Audio Unlock ============
+    // Silent audio element keeps iOS audio session alive
+    let silentAudio = null;
+    let audioUnlocked = false;
+
+    const SILENT_MP3 = 'data:audio/mp3;base64,SUQzBAAAAAAAI1RTU0UAAAAPAAADTGF2ZjU4Ljc2LjEwMAAAAAAAAAAAAAAA//tQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAABhgC7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7u7//////////////////////////////////////////////////////////////////8AAAAATGF2YzU4LjEzAAAAAAAAAAAAAAAAJAAAAAAAAAAAAYYoRBn3AAAAAAAAAAAAAAAAAAAAAP/7kGQAAANUMEoFPeACNQV40KEQBAAAA0gAAAAgAAA0gAAABExBTUUzLjEwMFVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVV//tQZAAP8AAAaQAAAAgAAA0gAAABAAABpAAAACAAADSAAAAEVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVVQ==';
+
+    const unlockAudio = () => {
+      if (audioUnlocked) return;
+      
+      // Create and play silent audio to unlock iOS audio session
+      silentAudio = document.createElement('audio');
+      silentAudio.setAttribute('x-webkit-airplay', 'deny'); // Hide from AirPlay
+      silentAudio.preload = 'auto';
+      silentAudio.loop = true;
+      silentAudio.src = SILENT_MP3;
+      silentAudio.play().catch(() => {});
+      
+      // Also init Web Audio context
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
+      audioUnlocked = true;
+      console.log('Audio unlocked');
+    };
+
+    // Unlock on any user interaction
+    ['touchstart', 'touchend', 'click'].forEach(evt => {
+      document.addEventListener(evt, unlockAudio, { once: false, passive: true });
+    });
+
+    // ============ Web Audio Beeps ============
+    let audioCtx = null;
+    
+    const playBeep = (freq = 800, dur = 150, count = 1) => {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      
+      for (let i = 0; i < count; i++) {
+        const startTime = audioCtx.currentTime + (i * 0.2);
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.frequency.value = freq;
+        osc.type = 'sine';
+        gain.gain.setValueAtTime(0.3, startTime);
+        gain.gain.exponentialRampToValueAtTime(0.01, startTime + dur / 1000);
+        osc.start(startTime);
+        osc.stop(startTime + dur / 1000);
+      }
+    };
+
+    // ============ Media Session API (Lock Screen) ============
+    const updateMediaSession = () => {
+      if (!('mediaSession' in navigator)) return;
+      
+      const exercise = getCurrentExercise() || 'Workout Timer';
+      const phase = currentPhase === 'warmup' ? 'Get Ready' : 
+                    currentPhase === 'work' ? 'Work' : 'Rest';
+      
+      navigator.mediaSession.metadata = new MediaMetadata({
+        title: `${phase} - ${formatTime(getTimeRemaining())}`,
+        artist: exercise,
+        album: `Round ${currentRound} of ${getRounds()}`
+      });
+      
+      navigator.mediaSession.setActionHandler('play', () => {
+        if (!isRunning) startTimer();
+      });
+      navigator.mediaSession.setActionHandler('pause', () => {
+        if (isRunning) pauseTimer();
+      });
     };
 
     // ============ DOM ============
@@ -156,10 +228,27 @@
     const getRounds = () => currentWorkout ? currentWorkout.exercises.length : parseInt(el.rounds.value);
     const getCurrentExercise = () => currentWorkout?.exercises[currentRound - 1] || null;
     const getNextExercise = () => currentWorkout?.exercises[currentRound] || null;
-    const formatTime = (s) => `${Math.floor(s/60).toString().padStart(2,'0')}:${(s%60).toString().padStart(2,'0')}`;
+    const formatTime = (s) => {
+      const secs = Math.max(0, Math.ceil(s));
+      return `${Math.floor(secs/60).toString().padStart(2,'0')}:${(secs%60).toString().padStart(2,'0')}`;
+    };
+
+    // Calculate time remaining from timestamps (accurate even after background)
+    const getTimeRemaining = () => {
+      if (isPaused && pausedTimeRemaining !== null) {
+        return pausedTimeRemaining;
+      }
+      if (!phaseStartTime || !phaseDuration) {
+        return getWorkTime();
+      }
+      const elapsed = (Date.now() - phaseStartTime) / 1000;
+      return Math.max(0, phaseDuration - elapsed);
+    };
 
     const updateDisplay = () => {
+      const timeRemaining = getTimeRemaining();
       el.timer.textContent = formatTime(timeRemaining);
+      
       if (currentPhase === 'warmup') {
         el.phaseLabel.textContent = 'Get Ready';
         el.exerciseName.textContent = currentWorkout?.exercises[0] || '';
@@ -171,52 +260,127 @@
         el.roundInfo.textContent = `Round ${currentRound} of ${getRounds()}`;
         el.nextUp.textContent = currentPhase === 'rest' && getNextExercise() ? `Next: ${getNextExercise()}` : '';
       }
+      
       document.body.classList.remove('bg-slate-900', 'bg-work', 'bg-rest', 'bg-warmup');
       document.body.classList.add(isRunning || isPaused ? `bg-${currentPhase}` : 'bg-slate-900');
+      
+      updateMediaSession();
     };
 
     const tick = () => {
-      if (timeRemaining > 0) {
-        timeRemaining--;
-        if (timeRemaining <= 3 && timeRemaining > 0) playBeep(600, 100);
-        updateDisplay();
-      } else {
-        if (currentPhase === 'warmup') { playBeep(1000, 200, 2); currentPhase = 'work'; timeRemaining = getWorkTime(); }
-        else if (currentPhase === 'work') { playBeep(1000, 200, 2); currentPhase = 'rest'; timeRemaining = getRestTime(); }
-        else {
+      const timeRemaining = getTimeRemaining();
+      
+      // Countdown beeps (3, 2, 1)
+      const secondsLeft = Math.ceil(timeRemaining);
+      if (secondsLeft <= 3 && secondsLeft > 0 && lastBeepedAt !== secondsLeft) {
+        playBeep(600, 100);
+        lastBeepedAt = secondsLeft;
+      }
+      
+      // Phase transition
+      if (timeRemaining <= 0) {
+        lastBeepedAt = null;
+        
+        if (currentPhase === 'warmup') {
+          playBeep(1000, 200, 2);
+          currentPhase = 'work';
+          phaseDuration = getWorkTime();
+          phaseStartTime = Date.now();
+        } else if (currentPhase === 'work') {
+          playBeep(1000, 200, 2);
+          currentPhase = 'rest';
+          phaseDuration = getRestTime();
+          phaseStartTime = Date.now();
+        } else {
+          // End of rest
           if (currentRound >= getRounds()) {
-            playBeep(1200, 300, 3); stopTimer();
-            el.phaseLabel.textContent = 'Done!'; el.exerciseName.textContent = '';
-            el.roundInfo.textContent = 'Workout complete'; el.nextUp.textContent = '';
+            playBeep(1200, 300, 3);
+            stopTimer();
+            el.phaseLabel.textContent = 'Done!';
+            el.exerciseName.textContent = '';
+            el.roundInfo.textContent = 'Workout complete';
+            el.nextUp.textContent = '';
             return;
           }
-          playBeep(800, 200, 2); currentRound++; currentPhase = 'work'; timeRemaining = getWorkTime();
+          playBeep(800, 200, 2);
+          currentRound++;
+          currentPhase = 'work';
+          phaseDuration = getWorkTime();
+          phaseStartTime = Date.now();
         }
-        updateDisplay();
       }
+      
+      updateDisplay();
     };
 
     const startTimer = () => {
-      initAudio();
-      if (!isRunning && !isPaused) { currentPhase = 'warmup'; currentRound = 1; timeRemaining = WARMUP_TIME; }
-      isRunning = true; isPaused = false;
+      unlockAudio();
+      
+      if (!isRunning && !isPaused) {
+        // Fresh start
+        currentPhase = 'warmup';
+        currentRound = 1;
+        phaseDuration = WARMUP_TIME;
+        phaseStartTime = Date.now();
+        lastBeepedAt = null;
+      } else if (isPaused && pausedTimeRemaining !== null) {
+        // Resume from pause - adjust start time to account for remaining time
+        phaseStartTime = Date.now() - ((phaseDuration - pausedTimeRemaining) * 1000);
+        pausedTimeRemaining = null;
+      }
+      
+      isRunning = true;
+      isPaused = false;
       el.startBtn.textContent = 'Pause';
       el.settings.classList.add('hidden');
       updateDisplay();
-      intervalId = setInterval(tick, 1000);
+      
+      // Use requestAnimationFrame for smooth updates, setInterval for background
+      intervalId = setInterval(tick, 100); // 100ms for responsive UI
     };
 
-    const pauseTimer = () => { isRunning = false; isPaused = true; el.startBtn.textContent = 'Resume'; clearInterval(intervalId); };
-    const stopTimer = () => { isRunning = false; isPaused = false; clearInterval(intervalId); el.startBtn.textContent = 'Start'; el.settings.classList.remove('hidden'); };
+    const pauseTimer = () => {
+      pausedTimeRemaining = getTimeRemaining();
+      isRunning = false;
+      isPaused = true;
+      el.startBtn.textContent = 'Resume';
+      clearInterval(intervalId);
+      updateDisplay();
+    };
+
+    const stopTimer = () => {
+      isRunning = false;
+      isPaused = false;
+      phaseStartTime = null;
+      phaseDuration = null;
+      pausedTimeRemaining = null;
+      lastBeepedAt = null;
+      clearInterval(intervalId);
+      el.startBtn.textContent = 'Start';
+      el.settings.classList.remove('hidden');
+    };
 
     const resetTimer = () => {
-      stopTimer(); currentPhase = 'warmup'; currentRound = 1;
-      el.phaseLabel.textContent = 'Ready'; el.exerciseName.textContent = '';
-      el.roundInfo.textContent = '-'; el.nextUp.textContent = '';
+      stopTimer();
+      currentPhase = 'warmup';
+      currentRound = 1;
+      el.phaseLabel.textContent = 'Ready';
+      el.exerciseName.textContent = '';
+      el.roundInfo.textContent = '-';
+      el.nextUp.textContent = '';
       document.body.classList.remove('bg-work', 'bg-rest', 'bg-warmup');
       document.body.classList.add('bg-slate-900');
       el.timer.textContent = formatTime(getWorkTime());
     };
+
+    // ============ Visibility Change (Background/Foreground) ============
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible' && isRunning) {
+        // Coming back from background - recalculate and update immediately
+        tick();
+        console.log('Returned from background, time remaining:', getTimeRemaining());
+      }
+    });
 
     // ============ Workout Selection ============
     const populateWorkoutSelect = () => {
