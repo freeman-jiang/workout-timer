@@ -241,13 +241,20 @@ struct TimerView: View {
         }
 
         timerState.onPhaseTransition = { [audioManager] phase in
-            audioManager.playPhaseTransition()
+            switch phase {
+            case .work:
+                audioManager.playPhaseTransition()
+            case .rest:
+                audioManager.playRestStart()
+            default:
+                break
+            }
             HapticManager.shared.phaseTransition()
             updateNowPlaying()
         }
 
         timerState.onRestStart = { [audioManager] in
-            audioManager.playRestStart()
+            audioManager.playPhaseTransition()
             HapticManager.shared.phaseTransition()
             updateNowPlaying()
         }

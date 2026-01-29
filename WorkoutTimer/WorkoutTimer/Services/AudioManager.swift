@@ -1,4 +1,5 @@
 import AVFoundation
+import AudioToolbox
 import Foundation
 
 enum SoundEffect: String {
@@ -225,8 +226,8 @@ final class AudioManager: NSObject, AVAudioPlayerDelegate {
         playSoundAndEndDucking(.rest, times: 2)
     }
 
-    /// Called at workout complete - ends ducking sequence
+    /// Called at workout complete - plays phase sound
     func playWorkoutComplete() {
-        playSoundAndEndDucking(.complete, times: 3)
+        playSoundAndEndDucking(.phase, times: 2)
     }
 }
