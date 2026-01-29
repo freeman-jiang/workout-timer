@@ -26,21 +26,28 @@ struct MeshGradientBackground: View {
     let phase: TimerPhase
     let isRunning: Bool
 
+    @State private var animationTime: Double = 0
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !isRunning || reduceMotion)) { timeline in
-            let elapsed = timeline.date.timeIntervalSinceReferenceDate
-
-            MeshGradient(
-                width: 3,
-                height: 3,
-                points: meshPoints(time: elapsed),
-                colors: meshColors
-            )
-            .ignoresSafeArea()
-        }
+        MeshGradient(
+            width: 3,
+            height: 3,
+            points: meshPoints(time: animationTime),
+            colors: meshColors
+        )
+        .ignoresSafeArea()
         .animation(AnimationConstants.backgroundMorph, value: phase)
+        .onAppear {
+            animationTime = Date().timeIntervalSinceReferenceDate
+        }
+        .task {
+            guard !reduceMotion else { return }
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .milliseconds(16)) // ~60fps
+                animationTime = Date().timeIntervalSinceReferenceDate
+            }
+        }
     }
 
     private var meshColors: [Color] {
@@ -54,25 +61,34 @@ struct MeshGradientBackground: View {
     }
 
     private func meshPoints(time: TimeInterval) -> [SIMD2<Float>] {
-        let breathingSpeed: Float = 0.3
-        let breathingAmount: Float = 0.02
-        let t = Float(time) * breathingSpeed
+        let t = Float(time)
 
-        // Subtle breathing motion during work phase
-        let motion = (phase == .work && isRunning && !reduceMotion) ? breathingAmount : 0
+        // Mist/cloud-like motion - aggressive values to see movement
+        let drift: Float = reduceMotion ? 0 : 0.4
+        let speed: Float = 2.0
+
+        // Helper for layered organic motion (multiple frequencies for natural flow)
+        func flow(seed: Float) -> Float {
+            let slow = sin(t * speed + seed) * 0.6
+            let medium = sin(t * speed * 1.7 + seed * 2.3) * 0.3
+            let fast = sin(t * speed * 2.9 + seed * 0.7) * 0.1
+            return (slow + medium + fast) * drift
+        }
 
         return [
-            // Top row
+            // Four corners stay fixed at exact corners
             SIMD2(0.0, 0.0),
-            SIMD2(0.5 + sin(t) * motion, 0.0),
+            SIMD2(0.5 + flow(seed: 1.0), 0.0),  // Top edge - Y stays at 0
             SIMD2(1.0, 0.0),
-            // Middle row
-            SIMD2(0.0, 0.5 + cos(t * 1.3) * motion),
-            SIMD2(0.5 + sin(t * 0.7) * motion, 0.5 + cos(t * 0.9) * motion),
-            SIMD2(1.0, 0.5 + sin(t * 1.1) * motion),
+
+            // Middle row - free to move
+            SIMD2(0.0, 0.5 + flow(seed: 4.0)),  // Left edge - X stays at 0
+            SIMD2(0.5 + flow(seed: 5.0), 0.5 + flow(seed: 6.0)),  // Center - full freedom
+            SIMD2(1.0, 0.5 + flow(seed: 8.0)),  // Right edge - X stays at 1
+
             // Bottom row
             SIMD2(0.0, 1.0),
-            SIMD2(0.5 + cos(t * 0.8) * motion, 1.0),
+            SIMD2(0.5 + flow(seed: 9.0), 1.0),  // Bottom edge - Y stays at 1
             SIMD2(1.0, 1.0)
         ]
     }

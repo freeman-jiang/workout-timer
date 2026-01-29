@@ -67,7 +67,7 @@ struct ControlButtons: View {
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(.white.opacity(0.9))
                         .frame(width: 56, height: 56)
-                        .glassCircle()
+                        .glassCircle(prominent: true)
                         .contentShape(Circle())
                 }
                 .buttonStyle(IconGlassButtonStyle())
