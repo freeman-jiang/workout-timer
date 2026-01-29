@@ -80,13 +80,13 @@ struct ControlButtons: View {
         .padding(.horizontal, 24)
         .animation(.snappy(duration: 0.25), value: isWorkoutActive)
         .alert("Cancel Workout?", isPresented: $showingCancelConfirmation) {
-            Button("Continue Workout", role: .cancel) {}
-            Button("Cancel Workout", role: .destructive) {
+            Button("Keep Going", role: .cancel) {}
+            Button("Cancel", role: .destructive) {
                 HapticManager.shared.warning()
                 onReset()
             }
         } message: {
-            Text("This will end your current workout. You'll need to start from the beginning.")
+            Text("Your progress will be lost.")
         }
     }
 }

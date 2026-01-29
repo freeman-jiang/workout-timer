@@ -20,12 +20,12 @@ enum Typography {
 
     /// Current exercise name - scales with Dynamic Type
     static var exercise: Font {
-        .system(.title2, design: .rounded, weight: .semibold)
+        .system(.title, design: .rounded, weight: .semibold)
     }
 
     /// Round info text (1/8) - scales with Dynamic Type
     static var roundInfo: Font {
-        .system(.title2, design: .rounded, weight: .regular)
+        .system(.title, design: .rounded, weight: .regular)
     }
 
     // MARK: - Buttons & Controls

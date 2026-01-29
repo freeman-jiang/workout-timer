@@ -27,59 +27,61 @@ struct TimerView: View {
 
                 // Main content
                 VStack(spacing: 0) {
-                    Spacer()
-
-                    // Phase label
-                    PhaseLabel(phase: timerState.currentPhase)
-                        .padding(.bottom, 8)
-                        .animation(
-                            reduceMotion ? nil : AnimationConstants.phaseTransition,
-                            value: timerState.currentPhase
-                        )
-
-                    // Exercise name or workout name (if custom workout)
-                    if timerState.currentPhase == .ready,
-                       let workoutName = timerState.selectedWorkout?.name {
-                        // Show workout name before starting
-                        Text(workoutName)
-                            .font(Typography.exercise)
-                            .foregroundStyle(.white)
+                    // Timer section - fixed position from top
+                    VStack(spacing: 0) {
+                        // Phase label
+                        PhaseLabel(phase: timerState.currentPhase)
                             .padding(.bottom, 8)
-                            .transition(.opacity)
-                    } else if let exerciseName = timerState.currentExerciseName,
-                              timerState.currentPhase != .complete {
-                        // Show current exercise name during workout
-                        Text(exerciseName)
-                            .font(Typography.exercise)
-                            .foregroundStyle(.white)
+                            .animation(
+                                reduceMotion ? nil : AnimationConstants.phaseTransition,
+                                value: timerState.currentPhase
+                            )
+
+                        // Exercise name or workout name (if custom workout)
+                        if timerState.currentPhase == .ready,
+                           let workoutName = timerState.selectedWorkout?.name {
+                            // Show workout name before starting
+                            Text(workoutName)
+                                .font(Typography.exercise)
+                                .foregroundStyle(.white)
+                                .padding(.bottom, 8)
+                                .transition(.opacity)
+                        } else if let exerciseName = timerState.currentExerciseName,
+                                  timerState.currentPhase != .complete {
+                            // Show current exercise name during workout
+                            Text(exerciseName)
+                                .font(Typography.exercise)
+                                .foregroundStyle(.white)
+                                .padding(.bottom, 8)
+                                .transition(.opacity)
+                        }
+
+                        // Timer display
+                        TimerDisplay(time: displayTime)
                             .padding(.bottom, 8)
-                            .transition(.opacity)
+
+                        // Round info
+                        Text(timerState.roundInfoText)
+                            .font(Typography.roundInfo)
+                            .foregroundStyle(.white.opacity(0.75))
+                            .padding(.bottom, 4)
+                            .contentTransition(.numericText())
+                            .animation(
+                                reduceMotion ? nil : AnimationConstants.numeric,
+                                value: timerState.currentRound
+                            )
+
+                        // Next exercise (during rest phase only)
+                        if timerState.currentPhase == .rest,
+                           let nextExercise = timerState.nextExerciseName {
+                            Text("Next: \(nextExercise)")
+                                .font(.system(size: 16, weight: .regular, design: .rounded))
+                                .foregroundStyle(.white.opacity(0.6))
+                                .padding(.bottom, 8)
+                                .transition(.opacity)
+                        }
                     }
-
-                    // Timer display
-                    TimerDisplay(time: displayTime)
-                    .padding(.bottom, 8)
-
-                    // Round info
-                    Text(timerState.roundInfoText)
-                        .font(Typography.roundInfo)
-                        .foregroundStyle(.white.opacity(0.75))
-                        .padding(.bottom, 4)
-                        .contentTransition(.numericText())
-                        .animation(
-                            reduceMotion ? nil : AnimationConstants.numeric,
-                            value: timerState.currentRound
-                        )
-
-                    // Next exercise (during rest phase only)
-                    if timerState.currentPhase == .rest,
-                       let nextExercise = timerState.nextExerciseName {
-                        Text("Next: \(nextExercise)")
-                            .font(.system(size: 16, weight: .regular, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.6))
-                            .padding(.bottom, 8)
-                            .transition(.opacity)
-                    }
+                    .padding(.top, 60)
 
                     Spacer()
 
@@ -212,6 +214,13 @@ struct TimerView: View {
         }
         .onDisappear {
             timerSubscription?.cancel()
+        }
+        .onChange(of: workouts) { _, newWorkouts in
+            // Sync selected workout with updated workouts array
+            if let selected = timerState.selectedWorkout,
+               let updated = newWorkouts.first(where: { $0.id == selected.id }) {
+                timerState.selectedWorkout = updated
+            }
         }
     }
 
