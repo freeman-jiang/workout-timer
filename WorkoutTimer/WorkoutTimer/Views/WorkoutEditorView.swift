@@ -259,19 +259,20 @@ struct ExerciseListView: View {
 
     @State private var draggingItem: ExerciseItem?
     @State private var dragOffset: CGFloat = 0
-    @State private var initialDragIndex: Int?
+    @State private var currentTargetIndex: Int?
+    @GestureState private var isDragging = false
 
     private let rowHeight: CGFloat = 56
 
     var body: some View {
         VStack(spacing: 0) {
             ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
-                let isDragging = draggingItem?.id == exercise.id
+                let isBeingDragged = draggingItem?.id == exercise.id
 
                 ExerciseRowContent(
                     index: displayIndex(for: index),
                     name: exercise.name,
-                    isDragging: isDragging,
+                    isDragging: isBeingDragged,
                     onDelete: {
                         withAnimation(AnimationConstants.subtle) {
                             exercises.removeAll { $0.id == exercise.id }
@@ -279,22 +280,30 @@ struct ExerciseListView: View {
                         HapticManager.shared.buttonTap()
                     }
                 )
-                .zIndex(isDragging ? 1 : 0)
-                .offset(y: isDragging ? dragOffset : offsetForRow(at: index))
+                .zIndex(isBeingDragged ? 1 : 0)
+                .offset(y: isBeingDragged ? dragOffset : offsetForRow(at: index))
+                .animation(.snappy(duration: 0.25), value: currentTargetIndex)
                 .gesture(
-                    LongPressGesture(minimumDuration: 0.2)
+                    LongPressGesture(minimumDuration: 0.15)
                         .sequenced(before: DragGesture())
+                        .updating($isDragging) { value, state, _ in
+                            if case .second(true, _) = value {
+                                state = true
+                            }
+                        }
                         .onChanged { value in
                             switch value {
                             case .second(true, let drag):
                                 if draggingItem == nil {
-                                    // Start dragging
-                                    draggingItem = exercise
-                                    initialDragIndex = index
+                                    withAnimation(.snappy(duration: 0.2)) {
+                                        draggingItem = exercise
+                                        currentTargetIndex = index
+                                    }
                                     HapticManager.shared.buttonTap()
                                 }
                                 if let drag = drag {
                                     dragOffset = drag.translation.height
+                                    updateTargetIndex(from: index)
                                 }
                             default:
                                 break
@@ -302,11 +311,10 @@ struct ExerciseListView: View {
                         }
                         .onEnded { value in
                             if case .second(true, _) = value {
-                                finishDrag()
+                                finishDrag(from: index)
                             }
                         }
                 )
-                .animation(.spring(duration: 0.25, bounce: 0.0), value: draggingItem)
 
                 // Separator
                 if index < exercises.count - 1 {
@@ -314,26 +322,41 @@ struct ExerciseListView: View {
                         .fill(.white.opacity(0.08))
                         .frame(height: 1)
                         .padding(.leading, 48)
+                        .opacity(isBeingDragged ? 0 : 1)
                 }
             }
         }
         .glassBackground(cornerRadius: 12)
+        .onChange(of: isDragging) { _, newValue in
+            if !newValue && draggingItem != nil {
+                // Gesture was cancelled
+                resetDrag()
+            }
+        }
+    }
+
+    private func updateTargetIndex(from dragIndex: Int) {
+        let newTarget = calculateTargetIndex(for: dragOffset, from: dragIndex)
+        if newTarget != currentTargetIndex {
+            withAnimation(.snappy(duration: 0.2)) {
+                currentTargetIndex = newTarget
+            }
+            HapticManager.shared.selection()
+        }
     }
 
     private func displayIndex(for arrayIndex: Int) -> Int {
         guard let draggingItem = draggingItem,
               let dragIndex = exercises.firstIndex(where: { $0.id == draggingItem.id }),
-              initialDragIndex != nil else {
+              let targetIdx = currentTargetIndex else {
             return arrayIndex + 1
         }
 
-        let currentTargetIndex = targetIndex(for: dragOffset, from: dragIndex)
-
         if arrayIndex == dragIndex {
-            return currentTargetIndex + 1
-        } else if dragIndex < arrayIndex && arrayIndex <= currentTargetIndex {
+            return targetIdx + 1
+        } else if dragIndex < arrayIndex && arrayIndex <= targetIdx {
             return arrayIndex
-        } else if currentTargetIndex <= arrayIndex && arrayIndex < dragIndex {
+        } else if targetIdx <= arrayIndex && arrayIndex < dragIndex {
             return arrayIndex + 2
         }
         return arrayIndex + 1
@@ -341,11 +364,10 @@ struct ExerciseListView: View {
 
     private func offsetForRow(at index: Int) -> CGFloat {
         guard let draggingItem = draggingItem,
-              let dragIndex = exercises.firstIndex(where: { $0.id == draggingItem.id }) else {
+              let dragIndex = exercises.firstIndex(where: { $0.id == draggingItem.id }),
+              let targetIdx = currentTargetIndex else {
             return 0
         }
-
-        let targetIdx = targetIndex(for: dragOffset, from: dragIndex)
 
         if index == dragIndex {
             return 0
@@ -357,23 +379,22 @@ struct ExerciseListView: View {
         return 0
     }
 
-    private func targetIndex(for offset: CGFloat, from startIndex: Int) -> Int {
+    private func calculateTargetIndex(for offset: CGFloat, from startIndex: Int) -> Int {
         let rowsMoved = Int(round(offset / rowHeight))
         let newIndex = startIndex + rowsMoved
         return max(0, min(exercises.count - 1, newIndex))
     }
 
-    private func finishDrag() {
+    private func finishDrag(from originalIndex: Int) {
         guard let draggingItem = draggingItem,
-              let fromIndex = exercises.firstIndex(where: { $0.id == draggingItem.id }) else {
+              let fromIndex = exercises.firstIndex(where: { $0.id == draggingItem.id }),
+              let toIndex = currentTargetIndex else {
             resetDrag()
             return
         }
 
-        let toIndex = targetIndex(for: dragOffset, from: fromIndex)
-
         if fromIndex != toIndex {
-            withAnimation(AnimationConstants.subtle) {
+            withAnimation(.snappy(duration: 0.25)) {
                 let item = exercises.remove(at: fromIndex)
                 exercises.insert(item, at: toIndex)
             }
@@ -384,10 +405,10 @@ struct ExerciseListView: View {
     }
 
     private func resetDrag() {
-        withAnimation(.spring(duration: 0.25, bounce: 0.1)) {
+        withAnimation(.snappy(duration: 0.25)) {
             draggingItem = nil
             dragOffset = 0
-            initialDragIndex = nil
+            currentTargetIndex = nil
         }
     }
 }

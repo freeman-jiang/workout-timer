@@ -9,6 +9,7 @@ final class HapticManager {
     private let softGenerator = UIImpactFeedbackGenerator(style: .soft)
     private let rigidGenerator = UIImpactFeedbackGenerator(style: .rigid)
     private let notificationGenerator = UINotificationFeedbackGenerator()
+    private let selectionGenerator = UISelectionFeedbackGenerator()
 
     private init() {
         // Prepare generators for minimal latency
@@ -22,6 +23,7 @@ final class HapticManager {
         softGenerator.prepare()
         rigidGenerator.prepare()
         notificationGenerator.prepare()
+        selectionGenerator.prepare()
     }
 
     /// Light haptic for countdown beeps (3, 2, 1)
@@ -93,5 +95,11 @@ final class HapticManager {
     func success() {
         notificationGenerator.notificationOccurred(.success)
         notificationGenerator.prepare()
+    }
+
+    /// Selection changed feedback (for pickers, drag reorder, etc.)
+    func selection() {
+        selectionGenerator.selectionChanged()
+        selectionGenerator.prepare()
     }
 }
