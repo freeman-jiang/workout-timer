@@ -184,6 +184,14 @@ struct TimerView: View {
             updateNowPlaying()
         }
 
+        timerState.onTimerStart = { [audioManager] in
+            audioManager.startBackgroundAudio()
+        }
+
+        timerState.onTimerStop = { [audioManager] in
+            audioManager.stopBackgroundAudio()
+        }
+
         // Start the tick timer (100ms interval)
         timerSubscription = Timer.publish(every: 0.1, on: .main, in: .common)
             .autoconnect()

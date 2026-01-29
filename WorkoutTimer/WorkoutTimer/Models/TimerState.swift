@@ -28,6 +28,8 @@ final class TimerState {
     var onPhaseTransition: ((TimerPhase) -> Void)?
     var onRestStart: (() -> Void)?
     var onWorkoutComplete: (() -> Void)?
+    var onTimerStart: (() -> Void)?
+    var onTimerStop: (() -> Void)?
 
     // MARK: - Beep tracking
     private var lastBeepedSecond: Int = -1
@@ -142,6 +144,7 @@ final class TimerState {
         phaseStartTime = Date()
         lastBeepedSecond = -1
         displayTimeRemaining = warmupDuration
+        onTimerStart?()
     }
 
     func pause() {
@@ -170,6 +173,7 @@ final class TimerState {
         pausedTimeRemaining = 0
         lastBeepedSecond = -1
         displayTimeRemaining = 0
+        onTimerStop?()
     }
 
     // MARK: - Tick (called every 100ms)
@@ -228,6 +232,7 @@ final class TimerState {
                 phaseDuration = 0
                 displayTimeRemaining = 0
                 onWorkoutComplete?()
+                onTimerStop?()
             } else {
                 // Next round
                 currentRound += 1
