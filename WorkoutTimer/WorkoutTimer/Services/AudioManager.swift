@@ -1,6 +1,9 @@
 import AVFoundation
 import AudioToolbox
 import Foundation
+import os.log
+
+private let logger = Logger(subsystem: "com.workout.timer", category: "AudioManager")
 
 enum SoundEffect: String {
     case countdown = "countdown"
@@ -40,7 +43,7 @@ final class AudioManager: NSObject, AVAudioPlayerDelegate {
             try AVAudioSession.sharedInstance().setActive(true)
             isSessionConfigured = true
         } catch {
-            print("Failed to configure audio session: \(error)")
+            logger.error("Failed to configure audio session: \(error.localizedDescription)")
         }
     }
 
@@ -54,7 +57,7 @@ final class AudioManager: NSObject, AVAudioPlayerDelegate {
                 options: [.duckOthers, .mixWithOthers]
             )
         } catch {
-            print("Failed to enable ducking: \(error)")
+            logger.error("Failed to enable ducking: \(error.localizedDescription)")
         }
     }
 
@@ -68,7 +71,7 @@ final class AudioManager: NSObject, AVAudioPlayerDelegate {
                 options: [.mixWithOthers]
             )
         } catch {
-            print("Failed to disable ducking: \(error)")
+            logger.error("Failed to disable ducking: \(error.localizedDescription)")
         }
     }
 
@@ -80,10 +83,10 @@ final class AudioManager: NSObject, AVAudioPlayerDelegate {
                     player.prepareToPlay()
                     players[sound] = player
                 } catch {
-                    print("Failed to load sound \(sound.rawValue): \(error)")
+                    logger.error("Failed to load sound \(sound.rawValue): \(error.localizedDescription)")
                 }
             } else {
-                print("Sound file not found: \(sound.rawValue).mp3")
+                logger.warning("Sound file not found: \(sound.rawValue).mp3")
             }
         }
     }
@@ -103,7 +106,7 @@ final class AudioManager: NSObject, AVAudioPlayerDelegate {
             silentPlayer?.volume = 0.0 // Silent
             silentPlayer?.prepareToPlay()
         } catch {
-            print("Failed to prepare silent audio: \(error)")
+            logger.error("Failed to prepare silent audio: \(error.localizedDescription)")
         }
     }
 
@@ -182,7 +185,7 @@ final class AudioManager: NSObject, AVAudioPlayerDelegate {
 
     private func playSoundOnce(_ sound: SoundEffect) {
         guard let url = Bundle.main.url(forResource: sound.rawValue, withExtension: "mp3") else {
-            print("Sound file not found: \(sound.rawValue).mp3")
+            logger.warning("Sound file not found: \(sound.rawValue).mp3")
             return
         }
 
@@ -196,7 +199,7 @@ final class AudioManager: NSObject, AVAudioPlayerDelegate {
 
             player.play()
         } catch {
-            print("Failed to play sound \(sound.rawValue): \(error)")
+            logger.error("Failed to play sound \(sound.rawValue): \(error.localizedDescription)")
         }
     }
 

@@ -32,6 +32,7 @@
 		001000000023 /* GlassButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000023 /* GlassButtonStyle.swift */; };
 		001000000024 /* AnimatedPhaseBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000024 /* AnimatedPhaseBackground.swift */; };
 		001000000025 /* WorkoutCompleteOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000025 /* WorkoutCompleteOverlay.swift */; };
+		C1B79F642F2C1D410007DBC3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C1B79F632F2C1D410007DBC3 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -61,6 +62,7 @@
 		002000000024 /* AnimatedPhaseBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedPhaseBackground.swift; sourceTree = "<group>"; };
 		002000000025 /* WorkoutCompleteOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCompleteOverlay.swift; sourceTree = "<group>"; };
 		003000000001 /* WorkoutTimer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WorkoutTimer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C1B79F632F2C1D410007DBC3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -85,6 +87,7 @@
 		005000000002 /* WorkoutTimer */ = {
 			isa = PBXGroup;
 			children = (
+				C1B79F632F2C1D410007DBC3 /* PrivacyInfo.xcprivacy */,
 				002000000001 /* WorkoutTimerApp.swift */,
 				005000000004 /* Models */,
 				005000000005 /* Views */,
@@ -244,6 +247,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C1B79F642F2C1D410007DBC3 /* PrivacyInfo.xcprivacy in Resources */,
 				001000000016 /* Assets.xcassets in Resources */,
 				001000000017 /* countdown.mp3 in Resources */,
 				001000000018 /* phase.mp3 in Resources */,

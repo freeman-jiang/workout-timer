@@ -1,4 +1,7 @@
 import Foundation
+import os.log
+
+private let logger = Logger(subsystem: "com.workout.timer", category: "WorkoutStorage")
 
 final class WorkoutStorage {
     static let shared = WorkoutStorage()
@@ -16,7 +19,7 @@ final class WorkoutStorage {
         do {
             return try JSONDecoder().decode([Workout].self, from: data)
         } catch {
-            print("Failed to decode workouts: \(error)")
+            logger.error("Failed to decode workouts: \(error.localizedDescription)")
             return []
         }
     }
@@ -26,7 +29,7 @@ final class WorkoutStorage {
             let data = try JSONEncoder().encode(workouts)
             UserDefaults.standard.set(data, forKey: workoutsKey)
         } catch {
-            print("Failed to encode workouts: \(error)")
+            logger.error("Failed to encode workouts: \(error.localizedDescription)")
         }
     }
 
@@ -73,7 +76,7 @@ final class WorkoutStorage {
             let data = try JSONEncoder().encode(settings)
             UserDefaults.standard.set(data, forKey: quickSettingsKey)
         } catch {
-            print("Failed to encode quick settings: \(error)")
+            logger.error("Failed to encode quick settings: \(error.localizedDescription)")
         }
     }
 }
