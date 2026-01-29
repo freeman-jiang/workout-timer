@@ -177,33 +177,22 @@ struct WorkoutEditorView: View {
                 .opacity(newExercise.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1.0)
             }
 
-            // Exercise list with drag and drop
+            // Exercise list with native drag and drop
             if !exercises.isEmpty {
-                List {
-                    ForEach(exercises) { exercise in
-                        DraggableExerciseRow(
-                            index: (exercises.firstIndex(where: { $0.id == exercise.id }) ?? 0) + 1,
-                            name: exercise.name,
-                            onDelete: {
-                                withAnimation(AnimationConstants.subtle) {
-                                    exercises.removeAll { $0.id == exercise.id }
-                                }
-                            }
-                        )
-                        .listRowBackground(Color.clear)
-                        .listRowInsets(EdgeInsets(top: 0, leading: 0, bottom: 0, trailing: 0))
-                        .listRowSeparator(.hidden)
-                    }
-                    .onMove { from, to in
-                        exercises.move(fromOffsets: from, toOffset: to)
+                ExerciseListView(
+                    exercises: $exercises,
+                    onDelete: { indexSet in
+                        withAnimation(AnimationConstants.subtle) {
+                            exercises.remove(atOffsets: indexSet)
+                        }
+                    },
+                    onMove: { from, to in
+                        withAnimation(AnimationConstants.subtle) {
+                            exercises.move(fromOffsets: from, toOffset: to)
+                        }
                         HapticManager.shared.buttonTap()
                     }
-                }
-                .listStyle(.plain)
-                .scrollContentBackground(.hidden)
-                .environment(\.editMode, .constant(.active))
-                .frame(minHeight: CGFloat(exercises.count * 52))
-                .glassBackground(cornerRadius: 12)
+                )
             }
         }
     }
@@ -261,15 +250,165 @@ struct ExerciseItem: Identifiable, Equatable {
     var name: String
 }
 
-// MARK: - Draggable Exercise Row (for List with drag-and-drop)
+// MARK: - Exercise List View (Gesture-based drag reordering)
 
-struct DraggableExerciseRow: View {
+struct ExerciseListView: View {
+    @Binding var exercises: [ExerciseItem]
+    let onDelete: (IndexSet) -> Void
+    let onMove: (IndexSet, Int) -> Void
+
+    @State private var draggingItem: ExerciseItem?
+    @State private var dragOffset: CGFloat = 0
+    @State private var initialDragIndex: Int?
+
+    private let rowHeight: CGFloat = 56
+
+    var body: some View {
+        VStack(spacing: 0) {
+            ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
+                let isDragging = draggingItem?.id == exercise.id
+
+                ExerciseRowContent(
+                    index: displayIndex(for: index),
+                    name: exercise.name,
+                    isDragging: isDragging,
+                    onDelete: {
+                        withAnimation(AnimationConstants.subtle) {
+                            exercises.removeAll { $0.id == exercise.id }
+                        }
+                        HapticManager.shared.buttonTap()
+                    }
+                )
+                .zIndex(isDragging ? 1 : 0)
+                .offset(y: isDragging ? dragOffset : offsetForRow(at: index))
+                .gesture(
+                    LongPressGesture(minimumDuration: 0.2)
+                        .sequenced(before: DragGesture())
+                        .onChanged { value in
+                            switch value {
+                            case .second(true, let drag):
+                                if draggingItem == nil {
+                                    // Start dragging
+                                    draggingItem = exercise
+                                    initialDragIndex = index
+                                    HapticManager.shared.buttonTap()
+                                }
+                                if let drag = drag {
+                                    dragOffset = drag.translation.height
+                                }
+                            default:
+                                break
+                            }
+                        }
+                        .onEnded { value in
+                            if case .second(true, _) = value {
+                                finishDrag()
+                            }
+                        }
+                )
+                .animation(.spring(duration: 0.25, bounce: 0.0), value: draggingItem)
+
+                // Separator
+                if index < exercises.count - 1 {
+                    Rectangle()
+                        .fill(.white.opacity(0.08))
+                        .frame(height: 1)
+                        .padding(.leading, 48)
+                }
+            }
+        }
+        .glassBackground(cornerRadius: 12)
+    }
+
+    private func displayIndex(for arrayIndex: Int) -> Int {
+        guard let draggingItem = draggingItem,
+              let dragIndex = exercises.firstIndex(where: { $0.id == draggingItem.id }),
+              initialDragIndex != nil else {
+            return arrayIndex + 1
+        }
+
+        let currentTargetIndex = targetIndex(for: dragOffset, from: dragIndex)
+
+        if arrayIndex == dragIndex {
+            return currentTargetIndex + 1
+        } else if dragIndex < arrayIndex && arrayIndex <= currentTargetIndex {
+            return arrayIndex
+        } else if currentTargetIndex <= arrayIndex && arrayIndex < dragIndex {
+            return arrayIndex + 2
+        }
+        return arrayIndex + 1
+    }
+
+    private func offsetForRow(at index: Int) -> CGFloat {
+        guard let draggingItem = draggingItem,
+              let dragIndex = exercises.firstIndex(where: { $0.id == draggingItem.id }) else {
+            return 0
+        }
+
+        let targetIdx = targetIndex(for: dragOffset, from: dragIndex)
+
+        if index == dragIndex {
+            return 0
+        } else if dragIndex < index && index <= targetIdx {
+            return -rowHeight
+        } else if targetIdx <= index && index < dragIndex {
+            return rowHeight
+        }
+        return 0
+    }
+
+    private func targetIndex(for offset: CGFloat, from startIndex: Int) -> Int {
+        let rowsMoved = Int(round(offset / rowHeight))
+        let newIndex = startIndex + rowsMoved
+        return max(0, min(exercises.count - 1, newIndex))
+    }
+
+    private func finishDrag() {
+        guard let draggingItem = draggingItem,
+              let fromIndex = exercises.firstIndex(where: { $0.id == draggingItem.id }) else {
+            resetDrag()
+            return
+        }
+
+        let toIndex = targetIndex(for: dragOffset, from: fromIndex)
+
+        if fromIndex != toIndex {
+            withAnimation(AnimationConstants.subtle) {
+                let item = exercises.remove(at: fromIndex)
+                exercises.insert(item, at: toIndex)
+            }
+            HapticManager.shared.buttonTap()
+        }
+
+        resetDrag()
+    }
+
+    private func resetDrag() {
+        withAnimation(.spring(duration: 0.25, bounce: 0.1)) {
+            draggingItem = nil
+            dragOffset = 0
+            initialDragIndex = nil
+        }
+    }
+}
+
+// MARK: - Exercise Row Content
+
+struct ExerciseRowContent: View {
     let index: Int
     let name: String
+    var isDragging: Bool = false
     let onDelete: () -> Void
 
     var body: some View {
-        HStack(spacing: 12) {
+        HStack(spacing: 10) {
+            // Drag handle
+            Image(systemName: "line.3.horizontal")
+                .font(.system(size: 14, weight: .medium))
+                .foregroundStyle(.white.opacity(isDragging ? 0.6 : 0.35))
+                .frame(width: 36, height: 56)
+                .contentShape(Rectangle())
+
             // Index badge
             Text("\(index)")
                 .font(Typography.cardSubtitle.monospacedDigit())
@@ -286,18 +425,25 @@ struct DraggableExerciseRow: View {
 
             // Delete button
             Button {
-                HapticManager.shared.buttonTap()
                 onDelete()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(.red.opacity(0.8))
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(.red.opacity(0.7))
                     .frame(width: 28, height: 28)
+                    .background(.red.opacity(0.1), in: Circle())
             }
             .buttonStyle(.plain)
         }
-        .padding(.horizontal, 12)
-        .padding(.vertical, 10)
+        .padding(.trailing, 12)
+        .frame(height: 56)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(isDragging ? Color.white.opacity(0.1) : Color.clear)
+                .padding(.horizontal, 4)
+        )
+        .scaleEffect(isDragging ? 1.02 : 1.0)
+        .shadow(color: isDragging ? .black.opacity(0.3) : .clear, radius: 8, y: 4)
     }
 }
 

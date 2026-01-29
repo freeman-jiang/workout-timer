@@ -25,12 +25,6 @@ struct TimerView: View {
                     isRunning: timerState.isRunning
                 )
 
-                // Countdown pulse overlay
-                CountdownPulseOverlay(
-                    secondsRemaining: secondsRemaining,
-                    isActive: timerState.isRunning && !timerState.isPaused
-                )
-
                 // Main content
                 VStack(spacing: 0) {
                     Spacer()
@@ -54,11 +48,7 @@ struct TimerView: View {
                     }
 
                     // Timer display
-                    TimerDisplay(
-                        time: displayTime,
-                        isCountingDown: timerState.isRunning,
-                        secondsRemaining: secondsRemaining
-                    )
+                    TimerDisplay(time: displayTime)
                     .padding(.bottom, 8)
 
                     // Round info
@@ -219,10 +209,6 @@ struct TimerView: View {
         default:
             return timerState.formattedTimeRemaining
         }
-    }
-
-    private var secondsRemaining: Int {
-        Int(ceil(timerState.displayTimeRemaining))
     }
 
     // MARK: - Setup

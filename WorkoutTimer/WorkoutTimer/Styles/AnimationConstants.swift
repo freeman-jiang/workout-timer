@@ -29,18 +29,12 @@ enum AnimationConstants {
     // MARK: - Timer Display
 
     /// Numeric text transitions (timer digits)
-    static let numeric = Animation.spring(duration: 0.2, bounce: 0.15)
-
-    /// Countdown pulse animation
-    static let countdownPulse = Animation.spring(duration: 0.3, bounce: 0.4)
+    static let numeric = Animation.easeInOut(duration: 0.15)
 
     // MARK: - Celebration
 
     /// Celebratory bounce for completion
     static let celebratory = Animation.spring(duration: 0.6, bounce: 0.5)
-
-    /// Confetti entrance
-    static let confettiEntrance = Animation.spring(duration: 0.4, bounce: 0.3)
 
     /// Badge popup
     static let badgePopup = Animation.spring(duration: 0.35, bounce: 0.4)

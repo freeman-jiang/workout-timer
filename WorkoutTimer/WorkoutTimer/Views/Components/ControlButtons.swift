@@ -29,7 +29,6 @@ struct ControlButtons: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
                     .glassCapsule(prominent: true)
-                    .symbolEffect(.bounce, value: buttonText)
             }
             .buttonStyle(PrimaryGlassButtonStyle())
             .accessibilityLabel(buttonText)
@@ -94,7 +93,6 @@ struct ControlButtonsCompact: View {
                     .foregroundStyle(.white)
                     .frame(width: 80, height: 80)
                     .glassCircle(prominent: true)
-                    .symbolEffect(.bounce, value: buttonText)
             }
             .buttonStyle(PrimaryGlassButtonStyle())
 

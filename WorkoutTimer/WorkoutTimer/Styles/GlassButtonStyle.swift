@@ -16,7 +16,7 @@ struct PrimaryGlassButtonStyle: ButtonStyle {
         configuration.label
             .scaleEffect(configuration.isPressed ? 0.92 : 1.0)
             .opacity(configuration.isPressed ? 0.85 : 1.0)
-            .animation(.spring(duration: 0.2, bounce: 0.35), value: configuration.isPressed)
+            .animation(.spring(duration: 0.12, bounce: 0.15), value: configuration.isPressed)
     }
 }
 

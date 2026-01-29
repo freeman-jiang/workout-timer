@@ -13,7 +13,6 @@ struct WorkoutCompleteOverlay: View {
     enum AnimationPhase {
         case initial
         case expand
-        case confetti
         case settle
     }
 
@@ -23,12 +22,6 @@ struct WorkoutCompleteOverlay: View {
             Color.black.opacity(0.4)
                 .ignoresSafeArea()
                 .opacity(animationPhase != .initial ? 1 : 0)
-
-            // Confetti
-            if animationPhase == .confetti || animationPhase == .settle {
-                ConfettiView()
-                    .allowsHitTesting(false)
-            }
 
             // Celebration card
             celebrationCard
@@ -44,7 +37,6 @@ struct WorkoutCompleteOverlay: View {
         switch animationPhase {
         case .initial: return 0.5
         case .expand: return 1.05
-        case .confetti: return 1.0
         case .settle: return 1.0
         }
     }
@@ -139,100 +131,11 @@ struct WorkoutCompleteOverlay: View {
         }
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.3) {
-            withAnimation(AnimationConstants.confettiEntrance) {
-                animationPhase = .confetti
-            }
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
             withAnimation(AnimationConstants.subtle) {
                 animationPhase = .settle
             }
         }
     }
-}
-
-// MARK: - Confetti View
-
-/// High-performance confetti animation using Canvas
-struct ConfettiView: View {
-    @State private var particles: [ConfettiParticle] = []
-    @State private var startTime: Date = Date()
-
-    private let colors: [Color] = [
-        .green, .blue, .purple, .orange, .yellow, .pink, .cyan
-    ]
-
-    var body: some View {
-        TimelineView(.animation) { timeline in
-            let elapsed = timeline.date.timeIntervalSince(startTime)
-
-            Canvas { context, size in
-                for particle in particles {
-                    let progress = elapsed / particle.duration
-                    guard progress < 1 else { continue }
-
-                    let x = particle.startX + particle.velocityX * CGFloat(elapsed)
-                    let y = particle.startY + particle.velocityY * CGFloat(elapsed) + 0.5 * 400 * CGFloat(elapsed * elapsed)
-                    let rotation = particle.rotation + particle.rotationSpeed * CGFloat(elapsed)
-                    let opacity = 1 - progress
-
-                    context.opacity = opacity
-                    context.translateBy(x: x, y: y)
-                    context.rotate(by: .radians(rotation))
-
-                    let rect = CGRect(
-                        x: -particle.size / 2,
-                        y: -particle.size / 2,
-                        width: particle.size,
-                        height: particle.size * 0.6
-                    )
-
-                    context.fill(
-                        Path(roundedRect: rect, cornerRadius: 2),
-                        with: .color(particle.color)
-                    )
-
-                    context.rotate(by: .radians(-rotation))
-                    context.translateBy(x: -x, y: -y)
-                }
-            }
-        }
-        .ignoresSafeArea()
-        .onAppear {
-            generateParticles()
-        }
-    }
-
-    private func generateParticles() {
-        let screenWidth = UIScreen.main.bounds.width
-
-        particles = (0..<60).map { _ in
-            ConfettiParticle(
-                startX: CGFloat.random(in: 0...screenWidth),
-                startY: -20,
-                velocityX: CGFloat.random(in: -100...100),
-                velocityY: CGFloat.random(in: 50...150),
-                rotation: CGFloat.random(in: 0...(.pi * 2)),
-                rotationSpeed: CGFloat.random(in: -5...5),
-                size: CGFloat.random(in: 8...14),
-                color: colors.randomElement() ?? .green,
-                duration: Double.random(in: 2.5...4.0)
-            )
-        }
-    }
-}
-
-struct ConfettiParticle {
-    let startX: CGFloat
-    let startY: CGFloat
-    let velocityX: CGFloat
-    let velocityY: CGFloat
-    let rotation: CGFloat
-    let rotationSpeed: CGFloat
-    let size: CGFloat
-    let color: Color
-    let duration: Double
 }
 
 // MARK: - Round Complete Badge
@@ -295,11 +198,3 @@ struct RoundCompleteBadge: View {
     }
 }
 
-#Preview("Confetti Only") {
-    ZStack {
-        Color.phaseWork
-            .ignoresSafeArea()
-
-        ConfettiView()
-    }
-}
