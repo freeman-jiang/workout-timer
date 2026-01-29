@@ -71,7 +71,6 @@ struct WorkoutsListView: View {
             Image(systemName: "dumbbell")
                 .font(.system(size: 56))
                 .foregroundStyle(.white.opacity(0.25))
-                .symbolEffect(.pulse.byLayer)
 
             Text("No Workouts Yet")
                 .font(Typography.celebration)
@@ -150,7 +149,7 @@ struct GlassWorkoutCard: View {
 
                 // Stats row
                 HStack(spacing: 16) {
-                    statBadge(icon: "list.bullet", value: "\(workout.exercises.count)", label: "exercises")
+                    statBadge(icon: "dumbbell", value: "\(workout.exercises.count)", label: "exercises")
                     statBadge(icon: "flame.fill", value: "\(workout.workTime)s", label: "work")
                     statBadge(icon: "pause.fill", value: "\(workout.restTime)s", label: "rest")
                 }

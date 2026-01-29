@@ -7,7 +7,7 @@ enum TimerMode: String, CaseIterable {
     var icon: String {
         switch self {
         case .timer: return "timer"
-        case .workouts: return "list.bullet"
+        case .workouts: return "dumbbell"
         }
     }
 }
@@ -50,6 +50,27 @@ struct SettingsCard: View {
             // Set initial mode based on whether a workout is selected
             if selectedWorkout != nil {
                 mode = .workouts
+            }
+        }
+        .onChange(of: workouts) { _, newWorkouts in
+            // Auto-switch to timer mode if workouts become empty
+            if newWorkouts.isEmpty && mode == .workouts {
+                withAnimation(AnimationConstants.glassMorph) {
+                    mode = .timer
+                    selectedWorkout = nil
+                }
+            }
+            // Clear selected workout if it no longer exists
+            if let selected = selectedWorkout,
+               !newWorkouts.contains(where: { $0.id == selected.id }) {
+                if let first = newWorkouts.first {
+                    selectedWorkout = first
+                } else {
+                    withAnimation(AnimationConstants.glassMorph) {
+                        mode = .timer
+                        selectedWorkout = nil
+                    }
+                }
             }
         }
     }
@@ -152,32 +173,13 @@ struct SettingsCard: View {
         VStack(spacing: 12) {
             Spacer()
 
-            Image(systemName: "dumbbell")
-                .font(.system(size: 32))
-                .foregroundStyle(.white.opacity(0.4))
-
             Text("No workouts yet")
                 .font(Typography.settingLabel)
-                .foregroundStyle(.white.opacity(0.6))
-
-            Button {
-                HapticManager.shared.buttonTap()
-                onCreateWorkout()
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "plus")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text("Create Workout")
-                        .font(Typography.buttonSmall)
-                }
-                .foregroundStyle(.white)
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .glassCapsule(prominent: true)
-            }
-            .buttonStyle(GlassButtonStyle())
+                .foregroundStyle(.white.opacity(0.5))
 
             Spacer()
+
+            manageWorkoutsButton
         }
     }
 
@@ -198,23 +200,27 @@ struct SettingsCard: View {
                 }
             }
 
-            Button {
-                HapticManager.shared.buttonTap()
-                onManageWorkouts()
-            } label: {
-                HStack(spacing: 6) {
-                    Image(systemName: "list.bullet")
-                        .font(.system(size: 13, weight: .medium))
-                    Text("Manage Workouts")
-                        .font(Typography.buttonSmall)
-                }
-                .foregroundStyle(.white.opacity(0.9))
-                .frame(maxWidth: .infinity)
-                .frame(height: 44)
-                .glassBackground(cornerRadius: 10)
-            }
-            .buttonStyle(GlassButtonStyle())
+            manageWorkoutsButton
         }
+    }
+
+    private var manageWorkoutsButton: some View {
+        Button {
+            HapticManager.shared.buttonTap()
+            onManageWorkouts()
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: "pencil")
+                    .font(.system(size: 13, weight: .medium))
+                Text("Manage Workouts")
+                    .font(Typography.buttonSmall)
+            }
+            .foregroundStyle(.white.opacity(0.9))
+            .frame(maxWidth: .infinity)
+            .frame(height: 44)
+            .glassBackground(cornerRadius: 10)
+        }
+        .buttonStyle(GlassButtonStyle())
     }
 
     private var workoutSelectionBinding: Binding<String> {

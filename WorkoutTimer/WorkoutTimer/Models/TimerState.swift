@@ -100,6 +100,14 @@ final class TimerState {
         }
     }
 
+    /// Total duration formatted in timer style (M:SS)
+    var formattedTotalDurationTimer: String {
+        let totalSeconds = Int(totalWorkoutDuration)
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+
     var formattedTimeRemaining: String {
         // Use ceiling so we show "5" at the start, and transition happens at 0
         let time = Int(ceil(displayTimeRemaining))

@@ -98,6 +98,14 @@ struct WorkoutEditorView: View {
             }
         }
         .preferredColorScheme(.dark)
+        .onAppear {
+            // Auto-focus name field for new workouts
+            if !isEditing {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    isNameFieldFocused = true
+                }
+            }
+        }
     }
 
     // MARK: - Sections
@@ -116,6 +124,10 @@ struct WorkoutEditorView: View {
                 .glassBackground(cornerRadius: 12)
                 .contentShape(Rectangle())
                 .focused($isNameFieldFocused)
+                .onSubmit {
+                    // Move focus to exercise field after entering name
+                    isExerciseFieldFocused = true
+                }
         }
     }
 
@@ -243,6 +255,9 @@ struct WorkoutEditorView: View {
         }
         newExercise = ""
         HapticManager.shared.buttonTap()
+
+        // Keep focus on exercise field for adding multiple exercises
+        isExerciseFieldFocused = true
     }
 
     private func saveWorkout() {

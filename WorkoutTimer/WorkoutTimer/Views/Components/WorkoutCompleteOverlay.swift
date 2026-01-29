@@ -140,36 +140,25 @@ struct WorkoutCompleteOverlay: View {
 
 // MARK: - Round Complete Badge
 
-/// Brief notification shown when a round is completed
+/// Brief toast notification shown when a round is completed
 struct RoundCompleteBadge: View {
     let roundNumber: Int
     let totalRounds: Int
 
-    @State private var isVisible = true
-
     var body: some View {
-        if isVisible {
-            HStack(spacing: 8) {
-                Image(systemName: "checkmark.circle.fill")
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(.green)
+        HStack(spacing: 8) {
+            Image(systemName: "checkmark.circle.fill")
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(.green)
 
-                Text("Round \(roundNumber) of \(totalRounds)")
-                    .font(Typography.buttonSmall)
-                    .foregroundStyle(.white)
-            }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 10)
-            .glassCapsule()
-            .transition(.badge)
-            .onAppear {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-                    withAnimation(AnimationConstants.disappear) {
-                        isVisible = false
-                    }
-                }
-            }
+            Text("Round \(roundNumber) of \(totalRounds)")
+                .font(Typography.buttonSmall)
+                .foregroundStyle(.white)
         }
+        .padding(.horizontal, 20)
+        .padding(.vertical, 12)
+        .glassCapsule()
+        .shadow(color: .black.opacity(0.2), radius: 8, y: 4)
     }
 }
 

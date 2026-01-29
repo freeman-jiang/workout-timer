@@ -62,14 +62,6 @@ struct TimerView: View {
                             value: timerState.currentRound
                         )
 
-                    // Total duration (only on ready screen)
-                    if timerState.currentPhase == .ready {
-                        Text(timerState.formattedTotalDuration)
-                            .font(.system(size: 16, weight: .regular, design: .rounded))
-                            .foregroundStyle(.white.opacity(0.5))
-                            .padding(.bottom, 4)
-                    }
-
                     // Next exercise (during rest phase only)
                     if timerState.currentPhase == .rest,
                        let nextExercise = timerState.nextExerciseName {
@@ -82,18 +74,11 @@ struct TimerView: View {
 
                     Spacer()
 
-                    // Round complete badge (appears briefly)
-                    if showingRoundBadge {
-                        RoundCompleteBadge(
-                            roundNumber: completedRound,
-                            totalRounds: timerState.totalRounds
-                        )
-                        .padding(.bottom, 16)
-                    }
-
                     // Control buttons
                     ControlButtons(
                         buttonText: timerState.buttonText,
+                        isWorkoutActive: timerState.isRunning || timerState.isPaused,
+                        isStartDisabled: isStartDisabled,
                         onStartPause: {
                             timerState.startOrToggle()
                             updateNowPlaying()
@@ -155,6 +140,21 @@ struct TimerView: View {
                     value: timerState.isRunning
                 )
 
+                // Round complete badge overlay (top of screen, no layout shift)
+                if showingRoundBadge {
+                    VStack {
+                        RoundCompleteBadge(
+                            roundNumber: completedRound,
+                            totalRounds: timerState.totalRounds
+                        )
+                        .padding(.top, 16)
+
+                        Spacer()
+                    }
+                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .allowsHitTesting(false)
+                }
+
                 // Workout complete overlay
                 if showingWorkoutComplete {
                     WorkoutCompleteOverlay(
@@ -203,12 +203,22 @@ struct TimerView: View {
     private var displayTime: String {
         switch timerState.currentPhase {
         case .ready:
-            return "-:--"
+            return timerState.formattedTotalDurationTimer
         case .complete:
             return "0:00"
         default:
             return timerState.formattedTimeRemaining
         }
+    }
+
+    /// Start button should be disabled if on workouts mode but no valid workout is selected
+    private var isStartDisabled: Bool {
+        // If a workout is selected but doesn't exist in the list, disable
+        if let selected = timerState.selectedWorkout {
+            return !workouts.contains(where: { $0.id == selected.id })
+        }
+        // Timer mode is always valid
+        return false
     }
 
     // MARK: - Setup
