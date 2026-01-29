@@ -1,3 +1,11 @@
 .vercel
 node_modules
 bun.lock
+
+# Xcode
+*.xcuserstate
+xcuserdata/
+DerivedData/
+*.ipa
+*.dSYM.zip
+*.dSYM
