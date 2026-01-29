@@ -50,6 +50,7 @@ struct ControlButtons: View {
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
                     .glassCapsule(prominent: true)
+                    .animation(nil, value: buttonText) // Disable fade animation on text change
             }
             .buttonStyle(PrimaryGlassButtonStyle())
             .accessibilityLabel(buttonText)

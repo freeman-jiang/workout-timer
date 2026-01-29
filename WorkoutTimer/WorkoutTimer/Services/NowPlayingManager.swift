@@ -1,6 +1,7 @@
 import MediaPlayer
 import UIKit
 
+@MainActor
 final class NowPlayingManager {
     static let shared = NowPlayingManager()
 

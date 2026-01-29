@@ -2,6 +2,7 @@ import Foundation
 import Combine
 
 @Observable
+@MainActor
 final class TimerState {
     // MARK: - Constants
     private let warmupDuration: TimeInterval = 5.0

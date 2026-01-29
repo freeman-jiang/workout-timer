@@ -98,12 +98,11 @@ struct WorkoutEditorView: View {
             }
         }
         .preferredColorScheme(.dark)
-        .onAppear {
+        .task {
             // Auto-focus name field for new workouts
             if !isEditing {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    isNameFieldFocused = true
-                }
+                try? await Task.sleep(for: .seconds(0.5))
+                isNameFieldFocused = true
             }
         }
     }
@@ -201,6 +200,7 @@ struct WorkoutEditorView: View {
                 .buttonStyle(IconGlassButtonStyle())
                 .disabled(newExercise.trimmingCharacters(in: .whitespaces).isEmpty)
                 .opacity(newExercise.trimmingCharacters(in: .whitespaces).isEmpty ? 0.5 : 1.0)
+                .accessibilityLabel("Add exercise")
             }
 
             // Exercise list with native drag and drop

@@ -9,6 +9,7 @@ enum SoundEffect: String {
 }
 
 @Observable
+@MainActor
 final class AudioManager: NSObject, AVAudioPlayerDelegate {
     private var players: [SoundEffect: AVAudioPlayer] = [:]
     private var activePlayers: [AVAudioPlayer] = [] // Keep strong references to playing sounds

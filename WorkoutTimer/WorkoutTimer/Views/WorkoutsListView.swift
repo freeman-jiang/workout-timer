@@ -34,6 +34,7 @@ struct WorkoutsListView: View {
                         .glassCircle()
                 }
                 .buttonStyle(IconGlassButtonStyle())
+                .accessibilityLabel("Add workout")
             }
         }
         .sheet(isPresented: $showingNewWorkout) {
@@ -166,11 +167,14 @@ struct GlassWorkoutCard: View {
             Image(systemName: icon)
                 .font(.system(size: 11, weight: .medium))
                 .foregroundStyle(.white.opacity(0.5))
+                .accessibilityHidden(true)
 
             Text(value)
                 .font(Typography.cardSubtitle)
                 .foregroundStyle(.white.opacity(0.7))
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(value) \(label)")
     }
 }
 

@@ -37,9 +37,18 @@ struct TimerView: View {
                             value: timerState.currentPhase
                         )
 
-                    // Exercise name (if custom workout)
-                    if let exerciseName = timerState.currentExerciseName,
-                       timerState.currentPhase != .complete {
+                    // Exercise name or workout name (if custom workout)
+                    if timerState.currentPhase == .ready,
+                       let workoutName = timerState.selectedWorkout?.name {
+                        // Show workout name before starting
+                        Text(workoutName)
+                            .font(Typography.exercise)
+                            .foregroundStyle(.white)
+                            .padding(.bottom, 8)
+                            .transition(.opacity)
+                    } else if let exerciseName = timerState.currentExerciseName,
+                              timerState.currentPhase != .complete {
+                        // Show current exercise name during workout
                         Text(exerciseName)
                             .font(Typography.exercise)
                             .foregroundStyle(.white)

@@ -196,7 +196,7 @@ struct SettingsCard: View {
             }
             .pickerStyle(.wheel)
             .frame(height: 120)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .clipShape(.rect(cornerRadius: 12))
             .onAppear {
                 if selectedWorkout == nil, let first = workouts.first {
                     selectedWorkout = first
