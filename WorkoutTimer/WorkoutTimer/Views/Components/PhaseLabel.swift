@@ -24,38 +24,6 @@ struct PhaseLabel: View {
     }
 }
 
-/// Alternative phase label with icon
-struct PhaseLabelWithIcon: View {
-    let phase: TimerPhase
-
-    private var iconName: String {
-        switch phase {
-        case .ready: return "figure.stand"
-        case .warmup: return "flame"
-        case .work: return "bolt.fill"
-        case .rest: return "pause.fill"
-        case .complete: return "checkmark.circle.fill"
-        }
-    }
-
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: iconName)
-                .font(.system(size: 12, weight: .semibold))
-                .symbolEffect(.bounce, value: phase)
-
-            Text(phase.displayText.uppercased())
-                .font(Typography.phase)
-                .tracking(3)
-        }
-        .foregroundStyle(.white.opacity(0.9))
-        .padding(.horizontal, 16)
-        .padding(.vertical, 8)
-        .glassCapsule()
-        .contentTransition(.symbolEffect(.replace))
-    }
-}
-
 #Preview {
     ZStack {
         Color.phaseWork
@@ -66,16 +34,6 @@ struct PhaseLabelWithIcon: View {
             PhaseLabel(phase: .work)
             PhaseLabel(phase: .rest)
             PhaseLabel(phase: .complete)
-
-            Divider()
-                .background(.white)
-                .padding(.vertical)
-
-            PhaseLabelWithIcon(phase: .ready)
-            PhaseLabelWithIcon(phase: .warmup)
-            PhaseLabelWithIcon(phase: .work)
-            PhaseLabelWithIcon(phase: .rest)
-            PhaseLabelWithIcon(phase: .complete)
         }
     }
 }

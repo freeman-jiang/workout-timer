@@ -27,7 +27,7 @@ struct Workout: Identifiable, Codable, Equatable {
 
     var totalDuration: TimeInterval {
         let workTotal = Double(workTime * exercises.count)
-        let restTotal = Double(restTime * (exercises.count - 1)) // No rest after last round
+        let restTotal = Double(restTime * exercises.count)
         return workTotal + restTotal
     }
 

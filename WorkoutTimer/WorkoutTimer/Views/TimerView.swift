@@ -141,23 +141,26 @@ struct TimerView: View {
                 )
 
                 // Round complete badge overlay (top of screen, no layout shift)
-                if showingRoundBadge {
-                    VStack {
-                        RoundCompleteBadge(
-                            roundNumber: completedRound,
-                            totalRounds: timerState.totalRounds
-                        )
-                        .padding(.top, 16)
-
-                        Spacer()
-                    }
-                    .transition(
-                        .asymmetric(
-                            insertion: .move(edge: .top).combined(with: .opacity),
-                            removal: .opacity.animation(.easeOut(duration: 0.3))
-                        )
+                VStack {
+                    RoundCompleteBadge(
+                        roundNumber: completedRound,
+                        totalRounds: timerState.totalRounds
                     )
-                    .allowsHitTesting(false)
+                    .padding(.top, 16)
+
+                    Spacer()
+                }
+                .opacity(showingRoundBadge ? 1 : 0)
+                .offset(y: showingRoundBadge ? 0 : -20)
+                .animation(.easeOut(duration: 0.3), value: showingRoundBadge)
+                .allowsHitTesting(false)
+                .onChange(of: showingRoundBadge) { _, isShowing in
+                    if isShowing {
+                        Task {
+                            try? await Task.sleep(for: .seconds(1.5))
+                            showingRoundBadge = false
+                        }
+                    }
                 }
 
                 // Workout complete overlay
@@ -282,16 +285,7 @@ struct TimerView: View {
 
     private func showRoundCompleteBadge() {
         completedRound = timerState.currentRound
-
-        withAnimation(AnimationConstants.badgePopup) {
-            showingRoundBadge = true
-        }
-
-        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
-            withAnimation(AnimationConstants.disappear) {
-                showingRoundBadge = false
-            }
-        }
+        showingRoundBadge = true
     }
 
     private func loadData() {

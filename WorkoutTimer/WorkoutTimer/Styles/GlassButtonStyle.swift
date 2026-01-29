@@ -96,13 +96,3 @@ extension View {
         modifier(GlassCardModifier(cornerRadius: cornerRadius, padding: padding))
     }
 }
-
-// MARK: - Legacy ScaleButtonStyle (kept for compatibility)
-
-struct ScaleButtonStyle: ButtonStyle {
-    func makeBody(configuration: Configuration) -> some View {
-        configuration.label
-            .scaleEffect(configuration.isPressed ? 0.95 : 1.0)
-            .animation(.spring(duration: 0.15, bounce: 0.3), value: configuration.isPressed)
-    }
-}

@@ -84,7 +84,7 @@ final class TimerState {
 
     var totalWorkoutDuration: TimeInterval {
         let workTotal = Double(workTime * totalRounds)
-        let restTotal = Double(restTime * (totalRounds - 1)) // No rest after last round
+        let restTotal = Double(restTime * totalRounds)
         return workTotal + restTotal
     }
 

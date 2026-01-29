@@ -174,17 +174,6 @@ struct GlassWorkoutCard: View {
     }
 }
 
-// MARK: - Legacy WorkoutCard (kept for compatibility)
-
-struct WorkoutCard: View {
-    let workout: Workout
-    let onTap: () -> Void
-
-    var body: some View {
-        GlassWorkoutCard(workout: workout, onTap: onTap)
-    }
-}
-
 #Preview {
     NavigationStack {
         WorkoutsListView(workouts: .constant([.sampleUpperBody, .sampleCore]))

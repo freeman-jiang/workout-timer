@@ -106,7 +106,7 @@ struct WorkoutCompleteOverlay: View {
 
     private var totalDuration: Int {
         let work = workTime * totalRounds
-        let rest = restTime * (totalRounds - 1) // No rest after last round
+        let rest = restTime * totalRounds
         return work + rest
     }
 

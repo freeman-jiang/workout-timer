@@ -340,45 +340,6 @@ struct GlassSettingRow: View {
     }
 }
 
-// MARK: - Legacy SettingRow (for compatibility)
-
-struct SettingRow: View {
-    let label: String
-    @Binding var value: Int
-    let range: ClosedRange<Int>
-    let unit: String
-
-    var body: some View {
-        GlassSettingRow(
-            icon: iconForLabel,
-            iconColor: colorForLabel,
-            label: label,
-            value: $value,
-            range: range,
-            unit: unit,
-            step: label == "Rounds" ? 1 : 5
-        )
-    }
-
-    private var iconForLabel: String {
-        switch label.lowercased() {
-        case "work": return "flame.fill"
-        case "rest": return "pause.fill"
-        case "rounds": return "repeat"
-        default: return "circle"
-        }
-    }
-
-    private var colorForLabel: Color {
-        switch label.lowercased() {
-        case "work": return .orange
-        case "rest": return .blue
-        case "rounds": return .purple
-        default: return .white
-        }
-    }
-}
-
 // MARK: - Previews
 
 #Preview("With Workouts") {
