@@ -240,11 +240,13 @@ struct TimerView: View {
             HapticManager.shared.countdownBeep()
         }
 
-        timerState.onPhaseTransition = { [audioManager] phase in
+        timerState.onPhaseTransition = { [audioManager] (phase: TimerPhase) in
             switch phase {
             case .work:
-                audioManager.playPhaseTransition()
+                // Warmup -> Work: high pitch (start of race)
+                audioManager.playWorkStart()
             case .rest:
+                // Work -> Rest: low pitch
                 audioManager.playRestStart()
             default:
                 break
@@ -254,7 +256,8 @@ struct TimerView: View {
         }
 
         timerState.onRestStart = { [audioManager] in
-            audioManager.playPhaseTransition()
+            // Rest -> Work: high pitch (start of race)
+            audioManager.playWorkStart()
             HapticManager.shared.phaseTransition()
             updateNowPlaying()
         }

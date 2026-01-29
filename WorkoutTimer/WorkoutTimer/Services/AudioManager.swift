@@ -4,8 +4,8 @@ import Foundation
 
 enum SoundEffect: String {
     case countdown = "countdown"
-    case phase = "phase"
-    case rest = "rest"
+    case highPitch = "phase"   // phase.mp3 is the high-pitched sound
+    case lowPitch = "rest"     // rest.mp3 is the low-pitched sound
     case complete = "complete"
 }
 
@@ -73,7 +73,7 @@ final class AudioManager: NSObject, AVAudioPlayerDelegate {
     }
 
     private func loadSounds() {
-        for sound in [SoundEffect.countdown, .phase, .rest, .complete] {
+        for sound in [SoundEffect.countdown, .highPitch, .lowPitch, .complete] {
             if let url = Bundle.main.url(forResource: sound.rawValue, withExtension: "mp3") {
                 do {
                     let player = try AVAudioPlayer(contentsOf: url)
@@ -216,18 +216,18 @@ final class AudioManager: NSObject, AVAudioPlayerDelegate {
         playSound(.countdown, times: 1)
     }
 
-    /// Called at phase transition - ends ducking sequence
-    func playPhaseTransition() {
-        playSoundAndEndDucking(.phase, times: 2)
+    /// Called when starting work - high pitch (like start of a race)
+    func playWorkStart() {
+        playSoundAndEndDucking(.highPitch, times: 2)
     }
 
-    /// Called at rest start - ends ducking sequence (in case no countdown preceded it)
+    /// Called when starting rest - low pitch
     func playRestStart() {
-        playSoundAndEndDucking(.rest, times: 2)
+        playSoundAndEndDucking(.lowPitch, times: 2)
     }
 
-    /// Called at workout complete - plays phase sound
+    /// Called at workout complete - low pitch 3x
     func playWorkoutComplete() {
-        playSoundAndEndDucking(.phase, times: 2)
+        playSoundAndEndDucking(.lowPitch, times: 3)
     }
 }
