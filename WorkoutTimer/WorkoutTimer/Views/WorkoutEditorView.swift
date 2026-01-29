@@ -39,8 +39,11 @@ struct WorkoutEditorView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background
+                // Background - tappable to dismiss keyboard
                 AnimatedPhaseBackground(phase: .ready, isRunning: false)
+                    .onTapGesture {
+                        dismissKeyboard()
+                    }
 
                 ScrollView {
                     VStack(spacing: 24) {
@@ -60,6 +63,7 @@ struct WorkoutEditorView: View {
                     }
                     .padding(16)
                 }
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle(isEditing ? "Edit Workout" : "New Workout")
             .navigationBarTitleDisplayMode(.inline)
@@ -107,10 +111,17 @@ struct WorkoutEditorView: View {
             TextField("e.g. Upper Body", text: $name)
                 .font(Typography.listItem)
                 .foregroundStyle(.white)
-                .padding(14)
+                .padding(.horizontal, 16)
+                .frame(minHeight: 52)
                 .glassBackground(cornerRadius: 12)
+                .contentShape(Rectangle())
                 .focused($isNameFieldFocused)
         }
+    }
+
+    private func dismissKeyboard() {
+        isNameFieldFocused = false
+        isExerciseFieldFocused = false
     }
 
     private var timeSettingsSection: some View {
@@ -156,8 +167,10 @@ struct WorkoutEditorView: View {
                 TextField("Add exercise", text: $newExercise)
                     .font(Typography.listItem)
                     .foregroundStyle(.white)
-                    .padding(14)
+                    .padding(.horizontal, 16)
+                    .frame(minHeight: 52)
                     .glassBackground(cornerRadius: 12)
+                    .contentShape(Rectangle())
                     .focused($isExerciseFieldFocused)
                     .onSubmit {
                         addExercise()
@@ -167,10 +180,11 @@ struct WorkoutEditorView: View {
                     addExercise()
                 } label: {
                     Image(systemName: "plus")
-                        .font(.system(size: 16, weight: .semibold))
+                        .font(.system(size: 18, weight: .semibold))
                         .foregroundStyle(.white)
-                        .frame(width: 48, height: 48)
+                        .frame(width: 52, height: 52)
                         .glassCircle(prominent: true)
+                        .contentShape(Circle())
                 }
                 .buttonStyle(IconGlassButtonStyle())
                 .disabled(newExercise.trimmingCharacters(in: .whitespaces).isEmpty)
@@ -210,7 +224,8 @@ struct WorkoutEditorView: View {
             }
             .foregroundStyle(.red)
             .frame(maxWidth: .infinity)
-            .frame(height: 52)
+            .frame(minHeight: 52)
+            .contentShape(Rectangle())
             .background(.red.opacity(0.15), in: RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(GlassButtonStyle())
@@ -444,19 +459,21 @@ struct ExerciseRowContent: View {
 
             Spacer()
 
-            // Delete button
+            // Delete button - larger hitbox for accessibility
             Button {
                 onDelete()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.red.opacity(0.7))
-                    .frame(width: 28, height: 28)
+                    .frame(width: 32, height: 32)
                     .background(.red.opacity(0.1), in: Circle())
             }
             .buttonStyle(.plain)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
         }
-        .padding(.trailing, 12)
+        .padding(.trailing, 8)
         .frame(height: 56)
         .background(
             RoundedRectangle(cornerRadius: 8)
@@ -494,20 +511,23 @@ struct GlassExerciseRow: View {
 
             Spacer()
 
-            // Delete button
+            // Delete button - larger hitbox for accessibility
             Button {
                 HapticManager.shared.buttonTap()
                 onDelete()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(.red.opacity(0.8))
-                    .frame(width: 28, height: 28)
+                    .frame(width: 32, height: 32)
+                    .background(.red.opacity(0.1), in: Circle())
             }
             .buttonStyle(.plain)
+            .frame(width: 44, height: 44)
+            .contentShape(Rectangle())
         }
         .padding(.horizontal, 12)
-        .padding(.vertical, 12)
+        .padding(.vertical, 8)
     }
 }
 
