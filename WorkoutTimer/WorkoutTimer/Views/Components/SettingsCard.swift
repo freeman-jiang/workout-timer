@@ -3,6 +3,13 @@ import SwiftUI
 enum TimerMode: String, CaseIterable {
     case timer = "Timer"
     case workouts = "Workouts"
+
+    var icon: String {
+        switch self {
+        case .timer: return "timer"
+        case .workouts: return "list.bullet"
+        }
+    }
 }
 
 struct SettingsCard: View {
@@ -15,52 +22,29 @@ struct SettingsCard: View {
     let onCreateWorkout: () -> Void
 
     @State private var mode: TimerMode = .timer
+    @Namespace private var tabNamespace
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(spacing: 16) {
-            // Mode tabs
-            HStack(spacing: 0) {
-                ForEach(TimerMode.allCases, id: \.self) { tabMode in
-                    Button {
-                        withAnimation(.easeInOut(duration: 0.2)) {
-                            mode = tabMode
-                            if tabMode == .timer {
-                                // Clear workout selection when switching to timer mode
-                                selectedWorkout = nil
-                            } else if tabMode == .workouts && !workouts.isEmpty {
-                                // Auto-select first workout when switching to workouts mode
-                                if selectedWorkout == nil {
-                                    selectedWorkout = workouts.first
-                                }
-                            }
-                        }
-                    } label: {
-                        Text(tabMode.rawValue)
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(mode == tabMode ? .white : .white.opacity(0.5))
-                            .frame(maxWidth: .infinity)
-                            .frame(height: 40)
-                            .background(mode == tabMode ? .white.opacity(0.2) : .clear)
-                            .clipShape(RoundedRectangle(cornerRadius: 8))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(4)
-            .background(.white.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            // Mode tabs with glass morphing
+            tabSelector
 
             // Content based on mode
-            if mode == .timer {
-                timerModeContent
-            } else {
-                workoutsModeContent
+            Group {
+                if mode == .timer {
+                    timerModeContent
+                } else {
+                    workoutsModeContent
+                }
             }
+            .animation(
+                reduceMotion ? nil : AnimationConstants.glassResize,
+                value: mode
+            )
         }
         .padding(20)
-        .background(.white.opacity(0.1))
-        .background(.ultraThinMaterial.opacity(0.3))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .glassBackground(cornerRadius: 24)
         .padding(.horizontal, 24)
         .onAppear {
             // Set initial mode based on whether a workout is selected
@@ -70,99 +54,167 @@ struct SettingsCard: View {
         }
     }
 
+    // MARK: - Tab Selector
+
+    private var tabSelector: some View {
+        HStack(spacing: 4) {
+            ForEach(TimerMode.allCases, id: \.self) { tabMode in
+                Button {
+                    withAnimation(AnimationConstants.glassMorph) {
+                        mode = tabMode
+                        if tabMode == .timer {
+                            selectedWorkout = nil
+                        } else if tabMode == .workouts && !workouts.isEmpty {
+                            if selectedWorkout == nil {
+                                selectedWorkout = workouts.first
+                            }
+                        }
+                    }
+                    HapticManager.shared.buttonTap()
+                } label: {
+                    HStack(spacing: 6) {
+                        Image(systemName: tabMode.icon)
+                            .font(.system(size: 13, weight: .medium))
+
+                        Text(tabMode.rawValue)
+                            .font(Typography.tabLabel)
+                    }
+                    .foregroundStyle(mode == tabMode ? .white : .white.opacity(0.5))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 40)
+                    .background {
+                        if mode == tabMode {
+                            Capsule()
+                                .fill(.white.opacity(0.2))
+                                .matchedGeometryEffect(id: "tab", in: tabNamespace)
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(4)
+        .glassBackground(cornerRadius: 12)
+    }
+
     // Fixed height for content area to prevent layout shift
     private let contentHeight: CGFloat = 180
 
     // MARK: - Timer Mode Content
+
     private var timerModeContent: some View {
-        VStack(spacing: 16) {
-            SettingRow(
+        VStack(spacing: 14) {
+            GlassSettingRow(
+                icon: "flame.fill",
+                iconColor: .orange,
                 label: "Work",
                 value: $workTime,
                 range: 5...300,
                 unit: "sec"
             )
 
-            SettingRow(
+            GlassSettingRow(
+                icon: "pause.fill",
+                iconColor: .blue,
                 label: "Rest",
                 value: $restTime,
                 range: 5...300,
                 unit: "sec"
             )
 
-            SettingRow(
+            GlassSettingRow(
+                icon: "repeat",
+                iconColor: .purple,
                 label: "Rounds",
                 value: $rounds,
                 range: 1...50,
-                unit: ""
+                unit: "",
+                step: 1
             )
         }
         .frame(height: contentHeight)
     }
 
     // MARK: - Workouts Mode Content
+
     private var workoutsModeContent: some View {
         VStack(spacing: 12) {
             if workouts.isEmpty {
-                // Empty state
-                VStack(spacing: 12) {
-                    Spacer()
-                    Text("No workouts yet")
-                        .font(.system(size: 15))
-                        .foregroundStyle(.white.opacity(0.6))
-
-                    Button {
-                        onCreateWorkout()
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: "plus")
-                                .font(.system(size: 14, weight: .medium))
-                            Text("Create Workout")
-                                .font(.system(size: 15, weight: .medium))
-                        }
-                        .foregroundStyle(.white)
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 46)
-                        .background(.white.opacity(0.2))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                    }
-                    .buttonStyle(ScaleButtonStyle())
-                    Spacer()
-                }
+                emptyWorkoutsState
             } else {
-                // Workout list with wheel picker
-                Picker("Workout", selection: workoutSelectionBinding) {
-                    ForEach(workouts) { workout in
-                        Text(workout.name)
-                            .tag(workout.id.uuidString)
-                    }
-                }
-                .pickerStyle(.wheel)
-                .frame(height: 120)
-                .clipShape(RoundedRectangle(cornerRadius: 12))
-                .onAppear {
-                    // Auto-select first workout if none selected
-                    if selectedWorkout == nil, let first = workouts.first {
-                        selectedWorkout = first
-                    }
-                }
-
-                // Manage workouts button
-                Button {
-                    onManageWorkouts()
-                } label: {
-                    Text("Manage Workouts")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(.white.opacity(0.9))
-                        .frame(maxWidth: .infinity)
-                        .frame(height: 46)
-                        .background(.white.opacity(0.15))
-                        .clipShape(RoundedRectangle(cornerRadius: 10))
-                }
-                .buttonStyle(ScaleButtonStyle())
+                workoutPicker
             }
         }
         .frame(height: contentHeight)
+    }
+
+    private var emptyWorkoutsState: some View {
+        VStack(spacing: 12) {
+            Spacer()
+
+            Image(systemName: "dumbbell")
+                .font(.system(size: 32))
+                .foregroundStyle(.white.opacity(0.4))
+
+            Text("No workouts yet")
+                .font(Typography.settingLabel)
+                .foregroundStyle(.white.opacity(0.6))
+
+            Button {
+                HapticManager.shared.buttonTap()
+                onCreateWorkout()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 14, weight: .semibold))
+                    Text("Create Workout")
+                        .font(Typography.buttonSmall)
+                }
+                .foregroundStyle(.white)
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .glassCapsule(prominent: true)
+            }
+            .buttonStyle(GlassButtonStyle())
+
+            Spacer()
+        }
+    }
+
+    private var workoutPicker: some View {
+        VStack(spacing: 12) {
+            Picker("Workout", selection: workoutSelectionBinding) {
+                ForEach(workouts) { workout in
+                    Text(workout.name)
+                        .tag(workout.id.uuidString)
+                }
+            }
+            .pickerStyle(.wheel)
+            .frame(height: 120)
+            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .onAppear {
+                if selectedWorkout == nil, let first = workouts.first {
+                    selectedWorkout = first
+                }
+            }
+
+            Button {
+                HapticManager.shared.buttonTap()
+                onManageWorkouts()
+            } label: {
+                HStack(spacing: 6) {
+                    Image(systemName: "list.bullet")
+                        .font(.system(size: 13, weight: .medium))
+                    Text("Manage Workouts")
+                        .font(Typography.buttonSmall)
+                }
+                .foregroundStyle(.white.opacity(0.9))
+                .frame(maxWidth: .infinity)
+                .frame(height: 44)
+                .glassBackground(cornerRadius: 10)
+            }
+            .buttonStyle(GlassButtonStyle())
+        }
     }
 
     private var workoutSelectionBinding: Binding<String> {
@@ -179,6 +231,98 @@ struct SettingsCard: View {
     }
 }
 
+// MARK: - Glass Setting Row
+
+struct GlassSettingRow: View {
+    let icon: String
+    let iconColor: Color
+    let label: String
+    @Binding var value: Int
+    let range: ClosedRange<Int>
+    let unit: String
+    var step: Int = 5
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    var body: some View {
+        HStack(spacing: 12) {
+            // Icon
+            Image(systemName: icon)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(iconColor)
+                .frame(width: 28, height: 28)
+                .glassCircle()
+
+            // Label
+            Text(label)
+                .font(Typography.settingLabel)
+                .foregroundStyle(.white.opacity(0.8))
+
+            Spacer()
+
+            // Stepper controls
+            HStack(spacing: 8) {
+                // Minus button
+                Button {
+                    if value > range.lowerBound {
+                        value -= step
+                        value = max(value, range.lowerBound)
+                        HapticManager.shared.buttonTap()
+                    }
+                } label: {
+                    Image(systemName: "minus")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 32, height: 32)
+                        .glassCircle()
+                }
+                .buttonStyle(IconGlassButtonStyle())
+                .disabled(value <= range.lowerBound)
+                .opacity(value <= range.lowerBound ? 0.4 : 1.0)
+
+                // Value
+                Text(formattedValue)
+                    .font(Typography.settingValue.monospacedDigit())
+                    .foregroundStyle(.white)
+                    .frame(minWidth: 56)
+                    .contentTransition(.numericText())
+                    .animation(
+                        reduceMotion ? nil : AnimationConstants.numeric,
+                        value: value
+                    )
+
+                // Plus button
+                Button {
+                    if value < range.upperBound {
+                        value += step
+                        value = min(value, range.upperBound)
+                        HapticManager.shared.buttonTap()
+                    }
+                } label: {
+                    Image(systemName: "plus")
+                        .font(.system(size: 13, weight: .bold))
+                        .foregroundStyle(.white)
+                        .frame(width: 32, height: 32)
+                        .glassCircle()
+                }
+                .buttonStyle(IconGlassButtonStyle())
+                .disabled(value >= range.upperBound)
+                .opacity(value >= range.upperBound ? 0.4 : 1.0)
+            }
+        }
+    }
+
+    private var formattedValue: String {
+        if unit.isEmpty {
+            return "\(value)"
+        } else {
+            return "\(value) \(unit)"
+        }
+    }
+}
+
+// MARK: - Legacy SettingRow (for compatibility)
+
 struct SettingRow: View {
     let label: String
     @Binding var value: Int
@@ -186,52 +330,37 @@ struct SettingRow: View {
     let unit: String
 
     var body: some View {
-        HStack {
-            Text(label)
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(0.7))
+        GlassSettingRow(
+            icon: iconForLabel,
+            iconColor: colorForLabel,
+            label: label,
+            value: $value,
+            range: range,
+            unit: unit,
+            step: label == "Rounds" ? 1 : 5
+        )
+    }
 
-            Spacer()
+    private var iconForLabel: String {
+        switch label.lowercased() {
+        case "work": return "flame.fill"
+        case "rest": return "pause.fill"
+        case "rounds": return "repeat"
+        default: return "circle"
+        }
+    }
 
-            HStack(spacing: 8) {
-                Button {
-                    if value > range.lowerBound {
-                        value -= (label == "Rounds" ? 1 : 5)
-                        value = max(value, range.lowerBound)
-                    }
-                } label: {
-                    Image(systemName: "minus")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white)
-                        .frame(width: 32, height: 32)
-                        .background(.white.opacity(0.1))
-                        .clipShape(Circle())
-                }
-                .buttonStyle(ScaleButtonStyle())
-
-                Text("\(value)\(unit.isEmpty ? "" : " \(unit)")")
-                    .font(.system(size: 14, weight: .medium).monospacedDigit())
-                    .foregroundStyle(.white)
-                    .frame(width: 70)
-
-                Button {
-                    if value < range.upperBound {
-                        value += (label == "Rounds" ? 1 : 5)
-                        value = min(value, range.upperBound)
-                    }
-                } label: {
-                    Image(systemName: "plus")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.white)
-                        .frame(width: 32, height: 32)
-                        .background(.white.opacity(0.1))
-                        .clipShape(Circle())
-                }
-                .buttonStyle(ScaleButtonStyle())
-            }
+    private var colorForLabel: Color {
+        switch label.lowercased() {
+        case "work": return .orange
+        case "rest": return .blue
+        case "rounds": return .purple
+        default: return .white
         }
     }
 }
+
+// MARK: - Previews
 
 #Preview("With Workouts") {
     ZStack {

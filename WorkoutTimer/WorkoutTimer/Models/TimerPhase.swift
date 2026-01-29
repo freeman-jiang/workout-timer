@@ -26,6 +26,58 @@ enum TimerPhase: String, CaseIterable {
         case .complete: return Color.phaseReady
         }
     }
+
+    /// Rich gradient colors for MeshGradient backgrounds
+    var gradientColors: [Color] {
+        switch self {
+        case .ready:
+            return [
+                Color(hex: "0f172a"),
+                Color(hex: "1e1b4b"),
+                Color(hex: "312e81"),
+                Color(hex: "1e293b")
+            ]
+        case .warmup:
+            return [
+                Color(hex: "4a1a6b"),
+                Color(hex: "7c3aed"),
+                Color(hex: "a855f7"),
+                Color(hex: "581c87")
+            ]
+        case .work:
+            return [
+                Color(hex: "064e3b"),
+                Color(hex: "059669"),
+                Color(hex: "10b981"),
+                Color(hex: "065f46")
+            ]
+        case .rest:
+            return [
+                Color(hex: "1e3a5f"),
+                Color(hex: "0369a1"),
+                Color(hex: "0ea5e9"),
+                Color(hex: "0c4a6e")
+            ]
+        case .complete:
+            return [
+                Color(hex: "0f172a"),
+                Color(hex: "1e1b4b"),
+                Color(hex: "fbbf24"),
+                Color(hex: "312e81")
+            ]
+        }
+    }
+
+    /// Accent color for the phase (used for highlights)
+    var accentColor: Color {
+        switch self {
+        case .ready: return Color(hex: "6366f1")
+        case .warmup: return Color(hex: "a855f7")
+        case .work: return Color(hex: "10b981")
+        case .rest: return Color(hex: "0ea5e9")
+        case .complete: return Color(hex: "fbbf24")
+        }
+    }
 }
 
 extension Color {

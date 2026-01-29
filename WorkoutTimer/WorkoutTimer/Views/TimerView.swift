@@ -9,47 +9,73 @@ struct TimerView: View {
     @State private var showingNewWorkout = false
     @State private var timerSubscription: AnyCancellable?
 
+    // Celebration state
+    @State private var showingWorkoutComplete = false
+    @State private var showingRoundBadge = false
+    @State private var completedRound = 0
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
         NavigationStack {
             ZStack {
-                // Background color that transitions with phase
-                timerState.currentPhase.backgroundColor
-                    .ignoresSafeArea()
-                    .animation(.easeInOut(duration: 0.3), value: timerState.currentPhase)
+                // Animated background that transitions with phase
+                AnimatedPhaseBackground(
+                    phase: timerState.currentPhase,
+                    isRunning: timerState.isRunning
+                )
 
+                // Countdown pulse overlay
+                CountdownPulseOverlay(
+                    secondsRemaining: secondsRemaining,
+                    isActive: timerState.isRunning && !timerState.isPaused
+                )
+
+                // Main content
                 VStack(spacing: 0) {
                     Spacer()
 
                     // Phase label
                     PhaseLabel(phase: timerState.currentPhase)
                         .padding(.bottom, 8)
-                        .animation(.easeInOut, value: timerState.currentPhase)
+                        .animation(
+                            reduceMotion ? nil : AnimationConstants.phaseTransition,
+                            value: timerState.currentPhase
+                        )
 
                     // Exercise name (if custom workout)
                     if let exerciseName = timerState.currentExerciseName,
                        timerState.currentPhase != .complete {
                         Text(exerciseName)
-                            .font(.system(size: 24, weight: .semibold))
+                            .font(Typography.exercise)
                             .foregroundStyle(.white)
                             .padding(.bottom, 8)
                             .transition(.opacity)
                     }
 
                     // Timer display
-                    TimerDisplay(time: displayTime)
-                        .padding(.bottom, 8)
-                        .animation(.none, value: timerState.timeRemaining)
+                    TimerDisplay(
+                        time: displayTime,
+                        isCountingDown: timerState.isRunning,
+                        secondsRemaining: secondsRemaining
+                    )
+                    .padding(.bottom, 8)
 
                     // Round info
                     Text(timerState.roundInfoText)
-                        .font(.system(size: 18, weight: .regular))
+                        .font(Typography.roundInfo)
                         .foregroundStyle(.white.opacity(0.7))
                         .padding(.bottom, 4)
+                        .contentTransition(.numericText())
+                        .animation(
+                            reduceMotion ? nil : AnimationConstants.numeric,
+                            value: timerState.currentRound
+                        )
 
                     // Total duration (only on ready screen)
                     if timerState.currentPhase == .ready {
                         Text(timerState.formattedTotalDuration)
-                            .font(.system(size: 16, weight: .regular))
+                            .font(.system(size: 16, weight: .regular, design: .rounded))
                             .foregroundStyle(.white.opacity(0.5))
                             .padding(.bottom, 4)
                     }
@@ -58,13 +84,22 @@ struct TimerView: View {
                     if timerState.currentPhase == .rest,
                        let nextExercise = timerState.nextExerciseName {
                         Text("Next: \(nextExercise)")
-                            .font(.system(size: 16, weight: .regular))
+                            .font(.system(size: 16, weight: .regular, design: .rounded))
                             .foregroundStyle(.white.opacity(0.6))
                             .padding(.bottom, 8)
                             .transition(.opacity)
                     }
 
                     Spacer()
+
+                    // Round complete badge (appears briefly)
+                    if showingRoundBadge {
+                        RoundCompleteBadge(
+                            roundNumber: completedRound,
+                            totalRounds: timerState.totalRounds
+                        )
+                        .padding(.bottom, 16)
+                    }
 
                     // Control buttons
                     ControlButtons(
@@ -116,9 +151,34 @@ struct TimerView: View {
                                 showingNewWorkout = true
                             }
                         )
-                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .transition(
+                            .asymmetric(
+                                insertion: .opacity.combined(with: .move(edge: .bottom)),
+                                removal: .opacity
+                            )
+                        )
                         .padding(.bottom, 24)
                     }
+                }
+                .animation(
+                    reduceMotion ? nil : AnimationConstants.appear,
+                    value: timerState.isRunning
+                )
+
+                // Workout complete overlay
+                if showingWorkoutComplete {
+                    WorkoutCompleteOverlay(
+                        totalRounds: timerState.totalRounds,
+                        workTime: timerState.workTime,
+                        restTime: timerState.restTime,
+                        onDismiss: {
+                            withAnimation(AnimationConstants.disappear) {
+                                showingWorkoutComplete = false
+                            }
+                            timerState.reset()
+                        }
+                    )
+                    .transition(.opacity)
                 }
             }
             .navigationDestination(isPresented: $showingWorkoutsList) {
@@ -148,6 +208,8 @@ struct TimerView: View {
         }
     }
 
+    // MARK: - Computed Properties
+
     private var displayTime: String {
         switch timerState.currentPhase {
         case .ready:
@@ -158,6 +220,12 @@ struct TimerView: View {
             return timerState.formattedTimeRemaining
         }
     }
+
+    private var secondsRemaining: Int {
+        Int(ceil(timerState.displayTimeRemaining))
+    }
+
+    // MARK: - Setup
 
     private func setupTimer() {
         // Setup callbacks for audio and haptics
@@ -170,6 +238,11 @@ struct TimerView: View {
             audioManager.playPhaseTransition()
             HapticManager.shared.phaseTransition()
             updateNowPlaying()
+
+            // Show round badge when entering rest phase
+            if phase == .rest {
+                showRoundCompleteBadge()
+            }
         }
 
         timerState.onRestStart = { [audioManager] in
@@ -180,7 +253,13 @@ struct TimerView: View {
 
         timerState.onWorkoutComplete = { [audioManager] in
             audioManager.playWorkoutComplete()
-            HapticManager.shared.workoutComplete()
+            HapticManager.shared.celebration()
+
+            // Show celebration overlay
+            withAnimation(AnimationConstants.celebratory) {
+                showingWorkoutComplete = true
+            }
+
             updateNowPlaying()
         }
 
@@ -198,6 +277,20 @@ struct TimerView: View {
             .sink { _ in
                 timerState.tick()
             }
+    }
+
+    private func showRoundCompleteBadge() {
+        completedRound = timerState.currentRound
+
+        withAnimation(AnimationConstants.badgePopup) {
+            showingRoundBadge = true
+        }
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1.5) {
+            withAnimation(AnimationConstants.disappear) {
+                showingRoundBadge = false
+            }
+        }
     }
 
     private func loadData() {

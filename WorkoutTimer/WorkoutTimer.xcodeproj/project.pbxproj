@@ -27,6 +27,11 @@
 		001000000018 /* phase.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 002000000018 /* phase.mp3 */; };
 		001000000019 /* rest.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 002000000019 /* rest.mp3 */; };
 		001000000020 /* complete.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 002000000020 /* complete.mp3 */; };
+		001000000021 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000021 /* Typography.swift */; };
+		001000000022 /* AnimationConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000022 /* AnimationConstants.swift */; };
+		001000000023 /* GlassButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000023 /* GlassButtonStyle.swift */; };
+		001000000024 /* AnimatedPhaseBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000024 /* AnimatedPhaseBackground.swift */; };
+		001000000025 /* WorkoutCompleteOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000025 /* WorkoutCompleteOverlay.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -50,6 +55,11 @@
 		002000000018 /* phase.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = phase.mp3; sourceTree = "<group>"; };
 		002000000019 /* rest.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = rest.mp3; sourceTree = "<group>"; };
 		002000000020 /* complete.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = complete.mp3; sourceTree = "<group>"; };
+		002000000021 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
+		002000000022 /* AnimationConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationConstants.swift; sourceTree = "<group>"; };
+		002000000023 /* GlassButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButtonStyle.swift; sourceTree = "<group>"; };
+		002000000024 /* AnimatedPhaseBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedPhaseBackground.swift; sourceTree = "<group>"; };
+		002000000025 /* WorkoutCompleteOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCompleteOverlay.swift; sourceTree = "<group>"; };
 		003000000001 /* WorkoutTimer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WorkoutTimer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
@@ -80,6 +90,7 @@
 				005000000005 /* Views */,
 				005000000006 /* Services */,
 				005000000007 /* Storage */,
+				005000000011 /* Styles */,
 				005000000008 /* Resources */,
 				002000000016 /* Assets.xcassets */,
 			);
@@ -148,6 +159,8 @@
 				002000000006 /* PhaseLabel.swift */,
 				002000000007 /* SettingsCard.swift */,
 				002000000008 /* ControlButtons.swift */,
+				002000000024 /* AnimatedPhaseBackground.swift */,
+				002000000025 /* WorkoutCompleteOverlay.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -161,6 +174,16 @@
 				002000000020 /* complete.mp3 */,
 			);
 			path = Sounds;
+			sourceTree = "<group>";
+		};
+		005000000011 /* Styles */ = {
+			isa = PBXGroup;
+			children = (
+				002000000021 /* Typography.swift */,
+				002000000022 /* AnimationConstants.swift */,
+				002000000023 /* GlassButtonStyle.swift */,
+			);
+			path = Styles;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -251,6 +274,11 @@
 				001000000013 /* HapticManager.swift in Sources */,
 				001000000014 /* NowPlayingManager.swift in Sources */,
 				001000000015 /* WorkoutStorage.swift in Sources */,
+				001000000021 /* Typography.swift in Sources */,
+				001000000022 /* AnimationConstants.swift in Sources */,
+				001000000023 /* GlassButtonStyle.swift in Sources */,
+				001000000024 /* AnimatedPhaseBackground.swift in Sources */,
+				001000000025 /* WorkoutCompleteOverlay.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

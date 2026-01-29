@@ -8,8 +8,8 @@ struct WorkoutsListView: View {
 
     var body: some View {
         ZStack {
-            Color.phaseReady
-                .ignoresSafeArea()
+            // Animated background
+            AnimatedPhaseBackground(phase: .ready, isRunning: false)
 
             VStack(spacing: 0) {
                 if workouts.isEmpty {
@@ -24,12 +24,16 @@ struct WorkoutsListView: View {
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
+                    HapticManager.shared.buttonTap()
                     showingNewWorkout = true
                 } label: {
                     Image(systemName: "plus")
                         .font(.system(size: 18, weight: .medium))
                         .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .glassCircle()
                 }
+                .buttonStyle(IconGlassButtonStyle())
             }
         }
         .sheet(isPresented: $showingNewWorkout) {
@@ -65,83 +69,131 @@ struct WorkoutsListView: View {
             Spacer()
 
             Image(systemName: "dumbbell")
-                .font(.system(size: 48))
-                .foregroundStyle(.white.opacity(0.3))
+                .font(.system(size: 56))
+                .foregroundStyle(.white.opacity(0.25))
+                .symbolEffect(.pulse.byLayer)
 
             Text("No Workouts Yet")
-                .font(.system(size: 20, weight: .semibold))
+                .font(Typography.celebration)
                 .foregroundStyle(.white)
 
             Text("Create a workout with custom exercises")
-                .font(.system(size: 16))
+                .font(Typography.settingLabel)
                 .foregroundStyle(.white.opacity(0.6))
+                .multilineTextAlignment(.center)
 
             Button {
+                HapticManager.shared.buttonTap()
                 showingNewWorkout = true
             } label: {
-                Text("Create Workout")
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 24)
-                    .padding(.vertical, 12)
-                    .background(.white.opacity(0.2))
-                    .clipShape(Capsule())
+                HStack(spacing: 8) {
+                    Image(systemName: "plus")
+                        .font(.system(size: 15, weight: .semibold))
+                    Text("Create Workout")
+                        .font(Typography.button)
+                }
+                .foregroundStyle(.white)
+                .padding(.horizontal, 28)
+                .padding(.vertical, 14)
+                .glassCapsule(prominent: true)
             }
-            .buttonStyle(ScaleButtonStyle())
+            .buttonStyle(PrimaryGlassButtonStyle())
             .padding(.top, 8)
 
             Spacer()
         }
+        .padding(.horizontal, 24)
     }
 
     private var workoutsList: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
                 ForEach(workouts) { workout in
-                    WorkoutCard(workout: workout) {
+                    GlassWorkoutCard(workout: workout) {
                         editingWorkout = workout
                     }
                 }
             }
             .padding(.horizontal, 16)
             .padding(.top, 16)
+            .padding(.bottom, 32)
         }
     }
 }
 
-struct WorkoutCard: View {
+// MARK: - Glass Workout Card
+
+struct GlassWorkoutCard: View {
     let workout: Workout
     let onTap: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         Button {
             HapticManager.shared.buttonTap()
             onTap()
         } label: {
-            VStack(alignment: .leading, spacing: 8) {
-                Text(workout.name)
-                    .font(.system(size: 18, weight: .semibold))
-                    .foregroundStyle(.white)
+            VStack(alignment: .leading, spacing: 10) {
+                // Title row
+                HStack {
+                    Text(workout.name)
+                        .font(Typography.cardTitle)
+                        .foregroundStyle(.white)
 
-                HStack(spacing: 16) {
-                    Label("\(workout.exercises.count) exercises", systemImage: "list.bullet")
-                    Label("\(workout.workTime)s work", systemImage: "flame")
-                    Label("\(workout.restTime)s rest", systemImage: "pause")
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(.white.opacity(0.4))
                 }
-                .font(.system(size: 13))
-                .foregroundStyle(.white.opacity(0.6))
+
+                // Stats row
+                HStack(spacing: 16) {
+                    statBadge(icon: "list.bullet", value: "\(workout.exercises.count)", label: "exercises")
+                    statBadge(icon: "flame.fill", value: "\(workout.workTime)s", label: "work")
+                    statBadge(icon: "pause.fill", value: "\(workout.restTime)s", label: "rest")
+                }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
-            .background(.white.opacity(0.1))
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .glassBackground(cornerRadius: 16)
         }
-        .buttonStyle(ScaleButtonStyle())
+        .buttonStyle(GlassButtonStyle())
+    }
+
+    private func statBadge(icon: String, value: String, label: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.white.opacity(0.5))
+
+            Text(value)
+                .font(Typography.cardSubtitle)
+                .foregroundStyle(.white.opacity(0.7))
+        }
+    }
+}
+
+// MARK: - Legacy WorkoutCard (kept for compatibility)
+
+struct WorkoutCard: View {
+    let workout: Workout
+    let onTap: () -> Void
+
+    var body: some View {
+        GlassWorkoutCard(workout: workout, onTap: onTap)
     }
 }
 
 #Preview {
     NavigationStack {
         WorkoutsListView(workouts: .constant([.sampleUpperBody, .sampleCore]))
+    }
+}
+
+#Preview("Empty") {
+    NavigationStack {
+        WorkoutsListView(workouts: .constant([]))
     }
 }
