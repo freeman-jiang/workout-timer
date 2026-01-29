@@ -6,7 +6,7 @@ enum Typography {
     // MARK: - Timer Display
 
     /// Large timer display - fixed size hero element (does not scale with Dynamic Type)
-    static let timer = Font.system(size: 96, weight: .thin, design: .rounded)
+    static let timer = Font.system(size: 120, weight: .thin, design: .rounded)
 
     /// Timer display for smaller contexts - fixed size
     static let timerCompact = Font.system(size: 72, weight: .thin, design: .rounded)
@@ -25,7 +25,7 @@ enum Typography {
 
     /// Round info text (1/8) - scales with Dynamic Type
     static var roundInfo: Font {
-        .system(.body, design: .rounded, weight: .regular)
+        .system(.title3, design: .rounded, weight: .regular)
     }
 
     // MARK: - Buttons & Controls

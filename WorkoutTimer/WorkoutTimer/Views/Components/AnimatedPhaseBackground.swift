@@ -27,6 +27,7 @@ struct MeshGradientBackground: View {
     let isRunning: Bool
 
     @State private var animationTime: Double = 0
+    @State private var startTime: Date?
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -38,14 +39,17 @@ struct MeshGradientBackground: View {
         )
         .ignoresSafeArea()
         .animation(AnimationConstants.backgroundMorph, value: phase)
-        .onAppear {
-            animationTime = Date().timeIntervalSinceReferenceDate
-        }
         .task {
             guard !reduceMotion else { return }
+            // Initialize start time only once, preserving animation continuity
+            if startTime == nil {
+                startTime = Date()
+            }
             while !Task.isCancelled {
                 try? await Task.sleep(for: .milliseconds(16)) // ~60fps
-                animationTime = Date().timeIntervalSinceReferenceDate
+                if let start = startTime {
+                    animationTime = Date().timeIntervalSince(start)
+                }
             }
         }
     }
