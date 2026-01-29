@@ -67,16 +67,19 @@ struct MeshGradientBackground: View {
     private func meshPoints(time: TimeInterval) -> [SIMD2<Float>] {
         let t = Float(time)
 
-        // Mist/cloud-like motion - aggressive values to see movement
+        // Mist/cloud-like motion - slow, ambient drift
         let drift: Float = reduceMotion ? 0 : 0.4
-        let speed: Float = 2.0
+        let speed: Float = 0.35
 
-        // Helper for layered organic motion (multiple frequencies for natural flow)
+        // Helper for organic motion using multiple sine waves with prime-ratio frequencies
+        // This creates non-repeating, natural-looking movement
         func flow(seed: Float) -> Float {
-            let slow = sin(t * speed + seed) * 0.6
-            let medium = sin(t * speed * 1.7 + seed * 2.3) * 0.3
-            let fast = sin(t * speed * 2.9 + seed * 0.7) * 0.1
-            return (slow + medium + fast) * drift
+            let a = sin(t * speed * 1.0 + seed) * 0.35
+            let b = sin(t * speed * 1.618 + seed * 2.7) * 0.25  // Golden ratio
+            let c = sin(t * speed * 2.236 + seed * 0.4) * 0.2   // sqrt(5)
+            let d = cos(t * speed * 0.7 + seed * 1.3) * 0.15
+            let e = sin(t * speed * 3.14159 + seed * 0.9) * 0.05 // Pi
+            return (a + b + c + d + e) * drift
         }
 
         return [

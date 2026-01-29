@@ -25,7 +25,7 @@ enum Typography {
 
     /// Round info text (1/8) - scales with Dynamic Type
     static var roundInfo: Font {
-        .system(.title3, design: .rounded, weight: .regular)
+        .system(.title2, design: .rounded, weight: .regular)
     }
 
     // MARK: - Buttons & Controls
