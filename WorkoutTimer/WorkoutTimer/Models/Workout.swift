@@ -26,10 +26,9 @@ struct Workout: Identifiable, Codable, Equatable {
     }
 
     var totalDuration: TimeInterval {
-        let warmup = 5.0
         let workTotal = Double(workTime * exercises.count)
-        let restTotal = Double(restTime * exercises.count)
-        return warmup + workTotal + restTotal
+        let restTotal = Double(restTime * (exercises.count - 1)) // No rest after last round
+        return workTotal + restTotal
     }
 
     func exerciseName(forRound round: Int) -> String? {
