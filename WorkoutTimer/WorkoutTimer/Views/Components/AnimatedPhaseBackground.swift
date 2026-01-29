@@ -8,12 +8,15 @@ struct AnimatedPhaseBackground: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
-        if #available(iOS 18.0, *) {
-            MeshGradientBackground(phase: phase, isRunning: isRunning)
-        } else {
-            // Fallback for iOS 17
-            SimpleAnimatedBackground(phase: phase)
+        Group {
+            if #available(iOS 18.0, *) {
+                MeshGradientBackground(phase: phase, isRunning: isRunning)
+            } else {
+                // Fallback for iOS 17
+                SimpleAnimatedBackground(phase: phase)
+            }
         }
+        .accessibilityHidden(true)
     }
 }
 

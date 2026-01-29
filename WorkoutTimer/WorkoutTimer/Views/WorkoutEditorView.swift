@@ -308,7 +308,23 @@ struct ExerciseListView: View {
                             exercises.removeAll { $0.id == exercise.id }
                         }
                         HapticManager.shared.buttonTap()
-                    }
+                    },
+                    onMoveUp: {
+                        guard index > 0 else { return }
+                        withAnimation(AnimationConstants.subtle) {
+                            exercises.move(fromOffsets: IndexSet(integer: index), toOffset: index - 1)
+                        }
+                        HapticManager.shared.buttonTap()
+                    },
+                    onMoveDown: {
+                        guard index < exercises.count - 1 else { return }
+                        withAnimation(AnimationConstants.subtle) {
+                            exercises.move(fromOffsets: IndexSet(integer: index), toOffset: index + 2)
+                        }
+                        HapticManager.shared.buttonTap()
+                    },
+                    isFirst: index == 0,
+                    isLast: index == exercises.count - 1
                 )
                 .zIndex(isBeingDragged ? 1 : 0)
                 .offset(y: isBeingDragged ? dragOffset : offsetForRow(at: index))
@@ -450,6 +466,10 @@ struct ExerciseRowContent: View {
     let name: String
     var isDragging: Bool = false
     let onDelete: () -> Void
+    var onMoveUp: (() -> Void)? = nil
+    var onMoveDown: (() -> Void)? = nil
+    var isFirst: Bool = false
+    var isLast: Bool = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -459,12 +479,14 @@ struct ExerciseRowContent: View {
                 .foregroundStyle(.white.opacity(isDragging ? 0.6 : 0.35))
                 .frame(width: 36, height: 56)
                 .contentShape(Rectangle())
+                .accessibilityHidden(true)
 
             // Index badge
             Text("\(index)")
                 .font(Typography.cardSubtitle.monospacedDigit())
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.white.opacity(0.6))
                 .frame(width: 24)
+                .accessibilityHidden(true)
 
             // Exercise name
             Text(name)
@@ -487,6 +509,7 @@ struct ExerciseRowContent: View {
             .buttonStyle(.plain)
             .frame(width: 44, height: 44)
             .contentShape(Rectangle())
+            .accessibilityLabel("Delete \(name)")
         }
         .padding(.trailing, 8)
         .frame(height: 56)
@@ -497,6 +520,24 @@ struct ExerciseRowContent: View {
         )
         .scaleEffect(isDragging ? 1.02 : 1.0)
         .shadow(color: isDragging ? .black.opacity(0.3) : .clear, radius: 8, y: 4)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("Exercise \(index), \(name)")
+        .accessibilityHint("Long press and drag to reorder")
+        .accessibilityActions {
+            if let onMoveUp = onMoveUp, !isFirst {
+                Button("Move Up") {
+                    onMoveUp()
+                }
+            }
+            if let onMoveDown = onMoveDown, !isLast {
+                Button("Move Down") {
+                    onMoveDown()
+                }
+            }
+            Button("Delete", role: .destructive) {
+                onDelete()
+            }
+        }
     }
 }
 

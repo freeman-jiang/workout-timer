@@ -105,10 +105,9 @@ struct WorkoutCompleteOverlay: View {
     }
 
     private var totalDuration: Int {
-        let warmup = 5
         let work = workTime * totalRounds
-        let rest = restTime * totalRounds
-        return warmup + work + rest
+        let rest = restTime * (totalRounds - 1) // No rest after last round
+        return work + rest
     }
 
     private func formatTime(_ seconds: Int) -> String {

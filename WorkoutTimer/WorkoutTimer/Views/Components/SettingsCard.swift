@@ -96,11 +96,12 @@ struct SettingsCard: View {
                     HStack(spacing: 6) {
                         Image(systemName: tabMode.icon)
                             .font(.system(size: 13, weight: .medium))
+                            .accessibilityHidden(true)
 
                         Text(tabMode.rawValue)
                             .font(Typography.tabLabel)
                     }
-                    .foregroundStyle(mode == tabMode ? .white : .white.opacity(0.5))
+                    .foregroundStyle(mode == tabMode ? .white : .white.opacity(0.6))
                     .frame(maxWidth: .infinity)
                     .frame(height: 40)
                     .background {
@@ -112,6 +113,8 @@ struct SettingsCard: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("\(tabMode.rawValue) mode")
+                .accessibilityAddTraits(mode == tabMode ? .isSelected : [])
             }
         }
         .padding(4)
@@ -175,7 +178,7 @@ struct SettingsCard: View {
 
             Text("No workouts yet")
                 .font(Typography.settingLabel)
-                .foregroundStyle(.white.opacity(0.5))
+                .foregroundStyle(.white.opacity(0.6))
 
             Spacer()
 
@@ -215,7 +218,7 @@ struct SettingsCard: View {
                 Text("Manage Workouts")
                     .font(Typography.buttonSmall)
             }
-            .foregroundStyle(.white.opacity(0.9))
+            .foregroundStyle(.white)
             .frame(maxWidth: .infinity)
             .frame(height: 44)
             .glassBackground(cornerRadius: 10)
@@ -258,11 +261,12 @@ struct GlassSettingRow: View {
                 .foregroundStyle(iconColor)
                 .frame(width: 28, height: 28)
                 .glassCircle()
+                .accessibilityHidden(true)
 
             // Label
             Text(label)
                 .font(Typography.settingLabel)
-                .foregroundStyle(.white.opacity(0.8))
+                .foregroundStyle(.white.opacity(0.85))
 
             Spacer()
 
@@ -279,12 +283,15 @@ struct GlassSettingRow: View {
                     Image(systemName: "minus")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(.white)
-                        .frame(width: 32, height: 32)
+                        .frame(width: 40, height: 40)
                         .glassCircle()
                 }
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Circle())
                 .buttonStyle(IconGlassButtonStyle())
                 .disabled(value <= range.lowerBound)
                 .opacity(value <= range.lowerBound ? 0.4 : 1.0)
+                .accessibilityLabel("Decrease \(label)")
 
                 // Value
                 Text(formattedValue)
@@ -296,6 +303,7 @@ struct GlassSettingRow: View {
                         reduceMotion ? nil : AnimationConstants.numeric,
                         value: value
                     )
+                    .accessibilityHidden(true)
 
                 // Plus button
                 Button {
@@ -308,13 +316,18 @@ struct GlassSettingRow: View {
                     Image(systemName: "plus")
                         .font(.system(size: 13, weight: .bold))
                         .foregroundStyle(.white)
-                        .frame(width: 32, height: 32)
+                        .frame(width: 40, height: 40)
                         .glassCircle()
                 }
+                .frame(minWidth: 44, minHeight: 44)
+                .contentShape(Circle())
                 .buttonStyle(IconGlassButtonStyle())
                 .disabled(value >= range.upperBound)
                 .opacity(value >= range.upperBound ? 0.4 : 1.0)
+                .accessibilityLabel("Increase \(label)")
             }
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("\(label), \(formattedValue)")
         }
     }
 

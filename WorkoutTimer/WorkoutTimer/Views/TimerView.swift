@@ -54,7 +54,7 @@ struct TimerView: View {
                     // Round info
                     Text(timerState.roundInfoText)
                         .font(Typography.roundInfo)
-                        .foregroundStyle(.white.opacity(0.7))
+                        .foregroundStyle(.white.opacity(0.75))
                         .padding(.bottom, 4)
                         .contentTransition(.numericText())
                         .animation(
@@ -151,7 +151,12 @@ struct TimerView: View {
 
                         Spacer()
                     }
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .transition(
+                        .asymmetric(
+                            insertion: .move(edge: .top).combined(with: .opacity),
+                            removal: .opacity.animation(.easeOut(duration: 0.3))
+                        )
+                    )
                     .allowsHitTesting(false)
                 }
 
