@@ -1,0 +1,225 @@
+import SwiftUI
+import Combine
+
+struct TimerView: View {
+    @State private var timerState = TimerState()
+    @State private var audioManager = AudioManager()
+    @State private var workouts: [Workout] = []
+    @State private var showingWorkoutsList = false
+    @State private var showingNewWorkout = false
+    @State private var timerSubscription: AnyCancellable?
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                // Background color that transitions with phase
+                timerState.currentPhase.backgroundColor
+                    .ignoresSafeArea()
+                    .animation(.easeInOut(duration: 0.3), value: timerState.currentPhase)
+
+                VStack(spacing: 0) {
+                    Spacer()
+
+                    // Phase label
+                    PhaseLabel(phase: timerState.currentPhase)
+                        .padding(.bottom, 8)
+                        .animation(.easeInOut, value: timerState.currentPhase)
+
+                    // Exercise name (if custom workout)
+                    if let exerciseName = timerState.currentExerciseName,
+                       timerState.currentPhase != .complete {
+                        Text(exerciseName)
+                            .font(.system(size: 24, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .padding(.bottom, 8)
+                            .transition(.opacity)
+                    }
+
+                    // Timer display
+                    TimerDisplay(time: displayTime)
+                        .padding(.bottom, 8)
+                        .animation(.none, value: timerState.timeRemaining)
+
+                    // Round info
+                    Text(timerState.roundInfoText)
+                        .font(.system(size: 18, weight: .regular))
+                        .foregroundStyle(.white.opacity(0.7))
+                        .padding(.bottom, 4)
+
+                    // Total duration (only on ready screen)
+                    if timerState.currentPhase == .ready {
+                        Text(timerState.formattedTotalDuration)
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundStyle(.white.opacity(0.5))
+                            .padding(.bottom, 4)
+                    }
+
+                    // Next exercise (during rest phase only)
+                    if timerState.currentPhase == .rest,
+                       let nextExercise = timerState.nextExerciseName {
+                        Text("Next: \(nextExercise)")
+                            .font(.system(size: 16, weight: .regular))
+                            .foregroundStyle(.white.opacity(0.6))
+                            .padding(.bottom, 8)
+                            .transition(.opacity)
+                    }
+
+                    Spacer()
+
+                    // Control buttons
+                    ControlButtons(
+                        buttonText: timerState.buttonText,
+                        onStartPause: {
+                            timerState.startOrToggle()
+                            updateNowPlaying()
+                        },
+                        onReset: {
+                            timerState.reset()
+                            updateNowPlaying()
+                        }
+                    )
+                    .padding(.bottom, 24)
+
+                    // Settings card (hidden when running)
+                    if !timerState.isRunning && timerState.currentPhase == .ready {
+                        SettingsCard(
+                            selectedWorkout: Binding(
+                                get: { timerState.selectedWorkout },
+                                set: { timerState.selectedWorkout = $0 }
+                            ),
+                            workTime: Binding(
+                                get: { timerState.quickWorkTime },
+                                set: {
+                                    timerState.quickWorkTime = $0
+                                    saveQuickSettings()
+                                }
+                            ),
+                            restTime: Binding(
+                                get: { timerState.quickRestTime },
+                                set: {
+                                    timerState.quickRestTime = $0
+                                    saveQuickSettings()
+                                }
+                            ),
+                            rounds: Binding(
+                                get: { timerState.quickRounds },
+                                set: {
+                                    timerState.quickRounds = $0
+                                    saveQuickSettings()
+                                }
+                            ),
+                            workouts: workouts,
+                            onManageWorkouts: {
+                                showingWorkoutsList = true
+                            },
+                            onCreateWorkout: {
+                                showingNewWorkout = true
+                            }
+                        )
+                        .transition(.opacity.combined(with: .move(edge: .bottom)))
+                        .padding(.bottom, 24)
+                    }
+                }
+            }
+            .navigationDestination(isPresented: $showingWorkoutsList) {
+                WorkoutsListView(workouts: $workouts)
+            }
+            .sheet(isPresented: $showingNewWorkout) {
+                WorkoutEditorView(
+                    workout: nil,
+                    onSave: { workout in
+                        workouts.append(workout)
+                        WorkoutStorage.shared.saveWorkouts(workouts)
+                        timerState.selectedWorkout = workout
+                    },
+                    onDelete: nil
+                )
+            }
+        }
+        .tint(.white)
+        .preferredColorScheme(.dark)
+        .onAppear {
+            setupTimer()
+            loadData()
+            setupNowPlaying()
+        }
+        .onDisappear {
+            timerSubscription?.cancel()
+        }
+    }
+
+    private var displayTime: String {
+        switch timerState.currentPhase {
+        case .ready:
+            return "-:--"
+        case .complete:
+            return "0:00"
+        default:
+            return timerState.formattedTimeRemaining
+        }
+    }
+
+    private func setupTimer() {
+        // Setup callbacks for audio and haptics
+        timerState.onCountdownBeep = { [audioManager] in
+            audioManager.playCountdownBeep()
+            HapticManager.shared.countdownBeep()
+        }
+
+        timerState.onPhaseTransition = { [audioManager] phase in
+            audioManager.playPhaseTransition()
+            HapticManager.shared.phaseTransition()
+            updateNowPlaying()
+        }
+
+        timerState.onRestStart = { [audioManager] in
+            audioManager.playRestStart()
+            HapticManager.shared.phaseTransition()
+            updateNowPlaying()
+        }
+
+        timerState.onWorkoutComplete = { [audioManager] in
+            audioManager.playWorkoutComplete()
+            HapticManager.shared.workoutComplete()
+            updateNowPlaying()
+        }
+
+        // Start the tick timer (100ms interval)
+        timerSubscription = Timer.publish(every: 0.1, on: .main, in: .common)
+            .autoconnect()
+            .sink { _ in
+                timerState.tick()
+            }
+    }
+
+    private func loadData() {
+        workouts = WorkoutStorage.shared.loadWorkouts()
+        let quickSettings = WorkoutStorage.shared.loadQuickSettings()
+        timerState.quickWorkTime = quickSettings.workTime
+        timerState.quickRestTime = quickSettings.restTime
+        timerState.quickRounds = quickSettings.rounds
+    }
+
+    private func saveQuickSettings() {
+        let settings = WorkoutStorage.QuickSettings(
+            workTime: timerState.quickWorkTime,
+            restTime: timerState.quickRestTime,
+            rounds: timerState.quickRounds
+        )
+        WorkoutStorage.shared.saveQuickSettings(settings)
+    }
+
+    private func setupNowPlaying() {
+        NowPlayingManager.shared.configure(timerState: timerState) { [timerState] in
+            timerState.startOrToggle()
+        }
+    }
+
+    private func updateNowPlaying() {
+        NowPlayingManager.shared.updateNowPlayingInfo()
+    }
+}
+
+#Preview {
+    TimerView()
+}
