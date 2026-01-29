@@ -32,10 +32,10 @@ enum TimerPhase: String, CaseIterable {
         switch self {
         case .ready:
             return [
-                Color(hex: "111111"),
-                Color(hex: "111111"),
-                Color(hex: "111111"),
-                Color(hex: "111111")
+                Color(hex: "0a0a0a"),
+                Color(hex: "171717"),
+                Color(hex: "1a1a1a"),
+                Color(hex: "0f0f0f")
             ]
         case .warmup:
             return [
@@ -46,10 +46,10 @@ enum TimerPhase: String, CaseIterable {
             ]
         case .work:
             return [
-                Color(hex: "064e3b"),
-                Color(hex: "059669"),
-                Color(hex: "10b981"),
-                Color(hex: "065f46")
+                Color(hex: "7c2d12"),
+                Color(hex: "c2410c"),
+                Color(hex: "ea580c"),
+                Color(hex: "9a3412")
             ]
         case .rest:
             return [
@@ -60,10 +60,10 @@ enum TimerPhase: String, CaseIterable {
             ]
         case .complete:
             return [
-                Color(hex: "0f172a"),
-                Color(hex: "1e1b4b"),
-                Color(hex: "fbbf24"),
-                Color(hex: "312e81")
+                Color(hex: "0a0a0a"),
+                Color(hex: "171717"),
+                Color(hex: "1a1a1a"),
+                Color(hex: "0f0f0f")
             ]
         }
     }

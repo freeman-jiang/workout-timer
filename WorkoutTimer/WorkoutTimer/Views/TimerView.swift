@@ -11,8 +11,6 @@ struct TimerView: View {
 
     // Celebration state
     @State private var showingWorkoutComplete = false
-    @State private var showingRoundBadge = false
-    @State private var completedRound = 0
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -30,14 +28,17 @@ struct TimerView: View {
                     // Timer section - fixed position from top
                     VStack(spacing: 0) {
                         // Phase label
-                        PhaseLabel(phase: timerState.currentPhase)
+                        PhaseLabel(
+                            phase: timerState.currentPhase,
+                            isWorkoutMode: timerState.selectedWorkout != nil
+                        )
                             .padding(.bottom, 8)
                             .animation(
                                 reduceMotion ? nil : AnimationConstants.phaseTransition,
                                 value: timerState.currentPhase
                             )
 
-                        // Exercise name or workout name (if custom workout)
+                        // Exercise name or workout name
                         if timerState.currentPhase == .ready,
                            let workoutName = timerState.selectedWorkout?.name {
                             // Show workout name before starting
@@ -46,9 +47,25 @@ struct TimerView: View {
                                 .foregroundStyle(.white)
                                 .padding(.bottom, 8)
                                 .transition(.opacity)
-                        } else if let exerciseName = timerState.currentExerciseName,
-                                  timerState.currentPhase != .complete {
-                            // Show current exercise name during workout
+                        } else if timerState.currentPhase == .warmup,
+                                  let firstExercise = timerState.currentExerciseName {
+                            // During warmup, show the first exercise coming up
+                            Text(firstExercise)
+                                .font(Typography.exercise)
+                                .foregroundStyle(.white)
+                                .padding(.bottom, 8)
+                                .transition(.opacity)
+                        } else if timerState.currentPhase == .rest,
+                                  let nextExercise = timerState.nextExerciseName {
+                            // During rest, show the upcoming exercise
+                            Text(nextExercise)
+                                .font(Typography.exercise)
+                                .foregroundStyle(.white)
+                                .padding(.bottom, 8)
+                                .transition(.opacity)
+                        } else if timerState.currentPhase == .work,
+                                  let exerciseName = timerState.currentExerciseName {
+                            // During work, show current exercise
                             Text(exerciseName)
                                 .font(Typography.exercise)
                                 .foregroundStyle(.white)
@@ -70,18 +87,8 @@ struct TimerView: View {
                                 reduceMotion ? nil : AnimationConstants.numeric,
                                 value: timerState.currentRound
                             )
-
-                        // Next exercise (during rest phase only)
-                        if timerState.currentPhase == .rest,
-                           let nextExercise = timerState.nextExerciseName {
-                            Text("Next: \(nextExercise)")
-                                .font(.system(size: 16, weight: .regular, design: .rounded))
-                                .foregroundStyle(.white.opacity(0.6))
-                                .padding(.bottom, 8)
-                                .transition(.opacity)
-                        }
                     }
-                    .padding(.top, 60)
+                    .padding(.top, timerState.currentPhase == .ready ? 60 : 100)
 
                     Spacer()
 
@@ -150,29 +157,6 @@ struct TimerView: View {
                     reduceMotion ? nil : AnimationConstants.appear,
                     value: timerState.isRunning
                 )
-
-                // Round complete badge overlay (top of screen, no layout shift)
-                VStack {
-                    RoundCompleteBadge(
-                        roundNumber: completedRound,
-                        totalRounds: timerState.totalRounds
-                    )
-                    .padding(.top, 16)
-
-                    Spacer()
-                }
-                .opacity(showingRoundBadge ? 1 : 0)
-                .offset(y: showingRoundBadge ? 0 : -20)
-                .animation(.easeOut(duration: 0.3), value: showingRoundBadge)
-                .allowsHitTesting(false)
-                .onChange(of: showingRoundBadge) { _, isShowing in
-                    if isShowing {
-                        Task {
-                            try? await Task.sleep(for: .seconds(1.5))
-                            showingRoundBadge = false
-                        }
-                    }
-                }
 
                 // Workout complete overlay
                 if showingWorkoutComplete {
@@ -260,11 +244,6 @@ struct TimerView: View {
             audioManager.playPhaseTransition()
             HapticManager.shared.phaseTransition()
             updateNowPlaying()
-
-            // Show round badge when entering rest phase
-            if phase == .rest {
-                showRoundCompleteBadge()
-            }
         }
 
         timerState.onRestStart = { [audioManager] in
@@ -299,11 +278,6 @@ struct TimerView: View {
             .sink { _ in
                 timerState.tick()
             }
-    }
-
-    private func showRoundCompleteBadge() {
-        completedRound = timerState.currentRound
-        showingRoundBadge = true
     }
 
     private func loadData() {

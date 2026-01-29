@@ -106,7 +106,7 @@ struct SettingsCard: View {
                     .frame(height: 40)
                     .background {
                         if mode == tabMode {
-                            Capsule()
+                            RoundedRectangle(cornerRadius: 8)
                                 .fill(.white.opacity(0.2))
                                 .matchedGeometryEffect(id: "tab", in: tabNamespace)
                         }
@@ -129,7 +129,7 @@ struct SettingsCard: View {
     private var timerModeContent: some View {
         VStack(spacing: 14) {
             GlassSettingRow(
-                icon: "flame.fill",
+                icon: "figure.run",
                 iconColor: .orange,
                 label: "Work",
                 value: $workTime,
@@ -138,7 +138,7 @@ struct SettingsCard: View {
             )
 
             GlassSettingRow(
-                icon: "pause.fill",
+                icon: "moon.fill",
                 iconColor: .blue,
                 label: "Rest",
                 value: $restTime,

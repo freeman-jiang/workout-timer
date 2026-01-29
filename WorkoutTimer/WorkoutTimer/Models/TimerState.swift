@@ -223,12 +223,24 @@ final class TimerState {
             onPhaseTransition?(.work)
 
         case .work:
-            // Work -> Rest
-            currentPhase = .rest
-            phaseDuration = TimeInterval(restTime)
-            phaseStartTime = Date()
-            displayTimeRemaining = phaseDuration
-            onPhaseTransition?(.rest)
+            // Work -> Rest (or Complete if last round)
+            if currentRound >= totalRounds {
+                // Last round done - skip rest and complete
+                currentPhase = .complete
+                isRunning = false
+                phaseStartTime = nil
+                phaseDuration = 0
+                displayTimeRemaining = 0
+                onWorkoutComplete?()
+                onTimerStop?()
+            } else {
+                // Not last round - go to rest
+                currentPhase = .rest
+                phaseDuration = TimeInterval(restTime)
+                phaseStartTime = Date()
+                displayTimeRemaining = phaseDuration
+                onPhaseTransition?(.rest)
+            }
 
         case .rest:
             // Rest -> next round Work or Complete

@@ -50,10 +50,10 @@ enum AnimationConstants {
     // MARK: - Appearance/Disappearance
 
     /// Content appearing (settings card, overlays)
-    static let appear = Animation.spring(duration: 0.4, bounce: 0.2)
+    static let appear = Animation.easeInOut(duration: 0.5)
 
     /// Content disappearing
-    static let disappear = Animation.spring(duration: 0.3, bounce: 0.1)
+    static let disappear = Animation.easeInOut(duration: 0.4)
 
     // MARK: - Background Animation
 

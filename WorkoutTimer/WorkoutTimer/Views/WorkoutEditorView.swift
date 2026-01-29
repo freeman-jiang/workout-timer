@@ -138,7 +138,7 @@ struct WorkoutEditorView: View {
     private var timeSettingsSection: some View {
         VStack(spacing: 14) {
             GlassSettingRow(
-                icon: "flame.fill",
+                icon: "figure.run",
                 iconColor: .orange,
                 label: "Work Time",
                 value: $workTime,
@@ -147,7 +147,7 @@ struct WorkoutEditorView: View {
             )
 
             GlassSettingRow(
-                icon: "pause.fill",
+                icon: "moon.fill",
                 iconColor: .blue,
                 label: "Rest Time",
                 value: $restTime,
