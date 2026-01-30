@@ -9,7 +9,7 @@ extension Int: @retroactive Identifiable {
 struct WorkoutsListView: View {
     @Binding var workouts: [Workout]
     @State private var editingWorkoutIndex: Int?
-    @State private var newWorkoutIndex: Int?
+    @State private var newWorkout: Workout?
     @Environment(\.dismiss) private var dismiss
 
     var body: some View {
@@ -43,17 +43,19 @@ struct WorkoutsListView: View {
                 .accessibilityLabel("Add workout")
             }
         }
-        .sheet(item: $newWorkoutIndex) { index in
-            if index < workouts.count {
-                WorkoutEditorView(
-                    workout: $workouts[index],
-                    isNewWorkout: true,
-                    onDelete: nil
-                )
-                .onDisappear {
-                    cleanupNewWorkoutIfInvalid(at: index)
+        .sheet(item: $newWorkout) { workout in
+            WorkoutEditorView(
+                workout: Binding(
+                    get: { newWorkout ?? workout },
+                    set: { newWorkout = $0 }
+                ),
+                isNewWorkout: true,
+                onDelete: nil,
+                onSave: { savedWorkout in
+                    workouts.append(savedWorkout)
+                    WorkoutStorage.shared.saveWorkouts(workouts)
                 }
-            }
+            )
         }
         .sheet(item: $editingWorkoutIndex) { index in
             if index < workouts.count {
@@ -73,33 +75,13 @@ struct WorkoutsListView: View {
     // MARK: - Actions
 
     private func createNewWorkout() {
-        // Create a placeholder workout and add it to the array
-        let newWorkout = Workout(
+        newWorkout = Workout(
             id: UUID(),
             name: "",
             workTime: 45,
             restTime: 15,
             exercises: []
         )
-        workouts.append(newWorkout)
-        newWorkoutIndex = workouts.count - 1
-    }
-
-    private func cleanupNewWorkoutIfInvalid(at index: Int) {
-        // If the workout at this index is still invalid (empty name or no exercises),
-        // remove it from the list
-        guard index < workouts.count else { return }
-        let workout = workouts[index]
-
-        let isValid = !workout.name.trimmingCharacters(in: .whitespaces).isEmpty && !workout.exercises.isEmpty
-
-        if !isValid {
-            workouts.remove(at: index)
-            // No need to save - it was never persisted
-        } else {
-            // Ensure it's persisted
-            WorkoutStorage.shared.saveWorkouts(workouts)
-        }
     }
 
     private var emptyState: some View {
@@ -193,8 +175,8 @@ struct GlassWorkoutCard: View {
                         value: "\(workout.exercises.count)",
                         label: workout.exercises.count == 1 ? "exercise" : "exercises"
                     )
-                    statBadge(icon: "figure.run", value: "\(workout.workTime)s", label: "work")
-                    statBadge(icon: "moon.fill", value: "\(workout.restTime)s", label: "rest")
+                    statBadge(icon: "figure.run", value: formatSeconds(workout.workTime), label: "work")
+                    statBadge(icon: "moon.fill", value: formatSeconds(workout.restTime), label: "rest")
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -227,6 +209,18 @@ struct GlassWorkoutCard: View {
             return "\(minutes)m"
         }
         return "\(minutes)m \(seconds)s"
+    }
+
+    private func formatSeconds(_ seconds: Int) -> String {
+        if seconds >= 60 {
+            let minutes = seconds / 60
+            let remainingSeconds = seconds % 60
+            if remainingSeconds == 0 {
+                return "\(minutes)m"
+            }
+            return "\(minutes)m \(remainingSeconds)s"
+        }
+        return "\(seconds)s"
     }
 }
 

@@ -17,6 +17,9 @@ struct WorkoutEditorView: View {
     /// Called when the workout should be deleted
     let onDelete: ((Workout) -> Void)?
 
+    /// Called when a new workout should be saved (only used for new workouts)
+    let onSave: ((Workout) -> Void)?
+
     /// Whether this is a new workout that hasn't been persisted yet
     let isNewWorkout: Bool
 
@@ -40,11 +43,13 @@ struct WorkoutEditorView: View {
     init(
         workout: Binding<Workout>,
         isNewWorkout: Bool = false,
-        onDelete: ((Workout) -> Void)?
+        onDelete: ((Workout) -> Void)?,
+        onSave: ((Workout) -> Void)? = nil
     ) {
         self._workout = workout
         self.isNewWorkout = isNewWorkout
         self.onDelete = onDelete
+        self.onSave = onSave
         _name = State(initialValue: workout.wrappedValue.name)
         _workTime = State(initialValue: workout.wrappedValue.workTime)
         _restTime = State(initialValue: workout.wrappedValue.restTime)
@@ -316,6 +321,7 @@ struct WorkoutEditorView: View {
         }
 
         // Mark that this workout has been valid at least once
+        let isFirstValidSave = !hasBeenValidOnce
         if !hasBeenValidOnce {
             hasBeenValidOnce = true
         }
@@ -331,8 +337,14 @@ struct WorkoutEditorView: View {
             // Update the binding (which updates the parent's array)
             await MainActor.run {
                 updateBinding()
-                // Persist to storage
-                WorkoutStorage.shared.updateWorkout(workout)
+
+                // For new workouts, call onSave to add to the list
+                if isNewWorkout && isFirstValidSave, let onSave = onSave {
+                    onSave(workout)
+                } else if !isNewWorkout {
+                    // Persist to storage for existing workouts
+                    WorkoutStorage.shared.updateWorkout(workout)
+                }
                 saveStatus = .saved
             }
 

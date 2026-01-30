@@ -344,6 +344,17 @@ struct GlassSettingRow: View {
     private var formattedValue: String {
         if unit.isEmpty {
             return "\(value)"
+        } else if unit == "sec" {
+            // Format seconds as m + s if >= 60
+            if value >= 60 {
+                let minutes = value / 60
+                let seconds = value % 60
+                if seconds == 0 {
+                    return "\(minutes)m"
+                }
+                return "\(minutes)m \(seconds)s"
+            }
+            return "\(value)s"
         } else {
             return "\(value) \(unit)"
         }
