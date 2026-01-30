@@ -90,7 +90,7 @@ struct WorkoutEditorView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Done") {
+                    Button("Back") {
                         dismiss()
                     }
                     .foregroundStyle(.white.opacity(0.8))
