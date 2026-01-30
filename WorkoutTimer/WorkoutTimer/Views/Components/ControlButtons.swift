@@ -49,7 +49,37 @@ struct ControlButtons: View {
                     .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .frame(height: 56)
-                    .glassCapsule(prominent: true)
+                    .background {
+                        Capsule()
+                            .fill(buttonText == "Start" ? Color(hex: "ea580c") : Color.clear)
+                            .background(.regularMaterial, in: Capsule())
+                            // Subtle inner glow at top edge
+                            .overlay(
+                                Capsule()
+                                    .strokeBorder(
+                                        LinearGradient(
+                                            colors: [.white.opacity(0.2), .clear],
+                                            startPoint: .top,
+                                            endPoint: .bottom
+                                        ),
+                                        lineWidth: 1
+                                    )
+                                    .opacity(buttonText == "Start" ? 1 : 0)
+                            )
+                            // Realistic shadow: tight shadow close, diffuse shadow far
+                            .shadow(
+                                color: buttonText == "Start" ? Color(hex: "ea580c").opacity(0.35) : .clear,
+                                radius: 8,
+                                x: 0,
+                                y: 4
+                            )
+                            .shadow(
+                                color: buttonText == "Start" ? Color(hex: "ea580c").opacity(0.2) : .clear,
+                                radius: 20,
+                                x: 0,
+                                y: 8
+                            )
+                    }
                     .animation(nil, value: buttonText) // Disable fade animation on text change
             }
             .buttonStyle(PrimaryGlassButtonStyle())

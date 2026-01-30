@@ -32,6 +32,7 @@
 		001000000023 /* GlassButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000023 /* GlassButtonStyle.swift */; };
 		001000000024 /* AnimatedPhaseBackground.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000024 /* AnimatedPhaseBackground.swift */; };
 		001000000025 /* WorkoutCompleteOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000025 /* WorkoutCompleteOverlay.swift */; };
+		C1812B162F2C22E700CBA6BB /* IconExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1812B152F2C22E700CBA6BB /* IconExportView.swift */; };
 		C1B79F642F2C1D410007DBC3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C1B79F632F2C1D410007DBC3 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
@@ -62,6 +63,7 @@
 		002000000024 /* AnimatedPhaseBackground.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedPhaseBackground.swift; sourceTree = "<group>"; };
 		002000000025 /* WorkoutCompleteOverlay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutCompleteOverlay.swift; sourceTree = "<group>"; };
 		003000000001 /* WorkoutTimer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WorkoutTimer.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		C1812B152F2C22E700CBA6BB /* IconExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IconExportView.swift; path = WorkoutTimer/Views/IconExportView.swift; sourceTree = "<group>"; };
 		C1B79F632F2C1D410007DBC3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
@@ -79,6 +81,7 @@
 		005000000001 = {
 			isa = PBXGroup;
 			children = (
+				C1812B152F2C22E700CBA6BB /* IconExportView.swift */,
 				005000000002 /* WorkoutTimer */,
 				005000000003 /* Products */,
 			);
@@ -263,6 +266,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C1812B162F2C22E700CBA6BB /* IconExportView.swift in Sources */,
 				001000000001 /* WorkoutTimerApp.swift in Sources */,
 				001000000002 /* TimerView.swift in Sources */,
 				001000000003 /* WorkoutsListView.swift in Sources */,
