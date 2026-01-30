@@ -187,6 +187,7 @@ struct GlassWorkoutCard: View {
 
                 // Stats row
                 HStack(spacing: 12) {
+                    statBadge(icon: "clock", value: formatDuration(workout.totalDuration), label: "")
                     statBadge(
                         icon: "list.bullet",
                         value: "\(workout.exercises.count)",
@@ -210,12 +211,22 @@ struct GlassWorkoutCard: View {
                 .foregroundStyle(.white.opacity(0.5))
                 .accessibilityHidden(true)
 
-            Text("\(value) \(label)")
+            Text(label.isEmpty ? value : "\(value) \(label)")
                 .font(Typography.cardSubtitle)
                 .foregroundStyle(.white.opacity(0.7))
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(value) \(label)")
+        .accessibilityLabel(label.isEmpty ? value : "\(value) \(label)")
+    }
+
+    private func formatDuration(_ duration: TimeInterval) -> String {
+        let totalSeconds = Int(duration)
+        let minutes = totalSeconds / 60
+        let seconds = totalSeconds % 60
+        if seconds == 0 {
+            return "\(minutes)m"
+        }
+        return "\(minutes)m \(seconds)s"
     }
 }
 
