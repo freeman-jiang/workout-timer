@@ -39,9 +39,10 @@ struct MeshGradientBackground: View {
         )
         .ignoresSafeArea()
         .animation(AnimationConstants.backgroundMorph, value: phase)
-        .task {
-            guard !reduceMotion else { return }
-            // Initialize start time only once, preserving animation continuity
+        .task(id: isRunning) {
+            // Only animate when timer is running and motion is allowed
+            guard isRunning, !reduceMotion else { return }
+
             if startTime == nil {
                 startTime = Date()
             }

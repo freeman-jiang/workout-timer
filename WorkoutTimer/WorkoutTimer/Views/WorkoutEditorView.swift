@@ -32,6 +32,7 @@ struct WorkoutEditorView: View {
     @State private var saveStatus: SaveStatus = .idle
     @State private var saveTask: Task<Void, Never>?
     @State private var hasBeenValidOnce = false
+    @State private var needsSave = false
 
     @FocusState private var isNameFieldFocused: Bool
     @FocusState private var isExerciseFieldFocused: Bool
@@ -117,10 +118,16 @@ struct WorkoutEditorView: View {
                 isNameFieldFocused = true
             }
         }
-        .onChange(of: name) { _, _ in scheduleAutoSave() }
-        .onChange(of: workTime) { _, _ in scheduleAutoSave() }
-        .onChange(of: restTime) { _, _ in scheduleAutoSave() }
-        .onChange(of: exercises) { _, _ in scheduleAutoSave() }
+        .onChange(of: name) { _, _ in needsSave = true }
+        .onChange(of: workTime) { _, _ in needsSave = true }
+        .onChange(of: restTime) { _, _ in needsSave = true }
+        .onChange(of: exercises) { _, _ in needsSave = true }
+        .onChange(of: needsSave) { _, shouldSave in
+            if shouldSave {
+                needsSave = false
+                scheduleAutoSave()
+            }
+        }
         .onDisappear {
             saveTask?.cancel()
             // If new workout was never valid, it will be cleaned up by the parent
@@ -373,8 +380,17 @@ struct WorkoutEditorView: View {
 // MARK: - Supporting Types
 
 struct ExerciseItem: Identifiable, Equatable {
-    let id = UUID()
+    let id: UUID
     var name: String
+
+    init(name: String) {
+        self.id = UUID()
+        self.name = name
+    }
+
+    static func == (lhs: ExerciseItem, rhs: ExerciseItem) -> Bool {
+        lhs.id == rhs.id && lhs.name == rhs.name
+    }
 }
 
 // MARK: - Exercise List View (Gesture-based drag reordering)
@@ -385,6 +401,7 @@ struct ExerciseListView: View {
     let onMove: (IndexSet, Int) -> Void
 
     @State private var draggingItem: ExerciseItem?
+    @State private var draggingIndex: Int?  // Cached drag index to avoid O(n) lookups
     @State private var dragOffset: CGFloat = 0
     @State private var currentTargetIndex: Int?
     @GestureState private var isDragging = false
@@ -440,6 +457,7 @@ struct ExerciseListView: View {
                                 if draggingItem == nil {
                                     withAnimation(.snappy(duration: 0.2)) {
                                         draggingItem = exercise
+                                        draggingIndex = index
                                         currentTargetIndex = index
                                     }
                                     HapticManager.shared.buttonTap()
@@ -489,8 +507,7 @@ struct ExerciseListView: View {
     }
 
     private func displayIndex(for arrayIndex: Int) -> Int {
-        guard let draggingItem = draggingItem,
-              let dragIndex = exercises.firstIndex(where: { $0.id == draggingItem.id }),
+        guard let dragIndex = draggingIndex,
               let targetIdx = currentTargetIndex else {
             return arrayIndex + 1
         }
@@ -506,8 +523,7 @@ struct ExerciseListView: View {
     }
 
     private func offsetForRow(at index: Int) -> CGFloat {
-        guard let draggingItem = draggingItem,
-              let dragIndex = exercises.firstIndex(where: { $0.id == draggingItem.id }),
+        guard let dragIndex = draggingIndex,
               let targetIdx = currentTargetIndex else {
             return 0
         }
@@ -529,8 +545,7 @@ struct ExerciseListView: View {
     }
 
     private func finishDrag(from originalIndex: Int) {
-        guard let draggingItem = draggingItem,
-              let fromIndex = exercises.firstIndex(where: { $0.id == draggingItem.id }),
+        guard let fromIndex = draggingIndex,
               let toIndex = currentTargetIndex else {
             resetDrag()
             return
@@ -550,6 +565,7 @@ struct ExerciseListView: View {
     private func resetDrag() {
         withAnimation(.snappy(duration: 0.25)) {
             draggingItem = nil
+            draggingIndex = nil
             dragOffset = 0
             currentTargetIndex = nil
         }
