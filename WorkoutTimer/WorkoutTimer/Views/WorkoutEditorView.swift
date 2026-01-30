@@ -1,11 +1,24 @@
 import SwiftUI
 
+// MARK: - Save Status
+
+enum SaveStatus: Equatable {
+    case idle
+    case saving
+    case saved
+}
+
 struct WorkoutEditorView: View {
     @Environment(\.dismiss) private var dismiss
 
-    let workout: Workout?
-    let onSave: (Workout) -> Void
+    /// Binding to the workout being edited (for existing workouts)
+    @Binding var workout: Workout
+
+    /// Called when the workout should be deleted
     let onDelete: ((Workout) -> Void)?
+
+    /// Whether this is a new workout that hasn't been persisted yet
+    let isNewWorkout: Bool
 
     @State private var name: String
     @State private var workTime: Int
@@ -13,27 +26,29 @@ struct WorkoutEditorView: View {
     @State private var exercises: [ExerciseItem]
     @State private var newExercise: String = ""
     @State private var showingDeleteConfirmation = false
+    @State private var saveStatus: SaveStatus = .idle
+    @State private var saveTask: Task<Void, Never>?
+    @State private var hasBeenValidOnce = false
 
     @FocusState private var isNameFieldFocused: Bool
     @FocusState private var isExerciseFieldFocused: Bool
 
-    private var isEditing: Bool { workout != nil }
     private var isValid: Bool {
         !name.trimmingCharacters(in: .whitespaces).isEmpty && !exercises.isEmpty
     }
 
     init(
-        workout: Workout?,
-        onSave: @escaping (Workout) -> Void,
+        workout: Binding<Workout>,
+        isNewWorkout: Bool = false,
         onDelete: ((Workout) -> Void)?
     ) {
-        self.workout = workout
-        self.onSave = onSave
+        self._workout = workout
+        self.isNewWorkout = isNewWorkout
         self.onDelete = onDelete
-        _name = State(initialValue: workout?.name ?? "")
-        _workTime = State(initialValue: workout?.workTime ?? 45)
-        _restTime = State(initialValue: workout?.restTime ?? 15)
-        _exercises = State(initialValue: (workout?.exercises ?? []).map { ExerciseItem(name: $0) })
+        _name = State(initialValue: workout.wrappedValue.name)
+        _workTime = State(initialValue: workout.wrappedValue.workTime)
+        _restTime = State(initialValue: workout.wrappedValue.restTime)
+        _exercises = State(initialValue: workout.wrappedValue.exercises.map { ExerciseItem(name: $0) })
     }
 
     var body: some View {
@@ -57,7 +72,7 @@ struct WorkoutEditorView: View {
                         exercisesSection
 
                         // Delete button (for existing workouts)
-                        if isEditing {
+                        if !isNewWorkout {
                             deleteButton
                         }
                     }
@@ -65,32 +80,24 @@ struct WorkoutEditorView: View {
                 }
                 .scrollDismissesKeyboard(.interactively)
             }
-            .navigationTitle(isEditing ? "Edit Workout" : "New Workout")
+            .navigationTitle(isNewWorkout ? "New Workout" : "Edit Workout")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") {
+                    Button("Done") {
                         dismiss()
                     }
                     .foregroundStyle(.white.opacity(0.8))
                 }
 
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("Save") {
-                        HapticManager.shared.success()
-                        saveWorkout()
-                    }
-                    .font(.system(size: 17, weight: .semibold))
-                    .foregroundStyle(isValid ? .white : .white.opacity(0.4))
-                    .disabled(!isValid)
+                    saveStatusIndicator
                 }
             }
             .alert("Delete Workout?", isPresented: $showingDeleteConfirmation) {
                 Button("Cancel", role: .cancel) {}
                 Button("Delete", role: .destructive) {
-                    if let workout = workout {
-                        onDelete?(workout)
-                    }
+                    onDelete?(workout)
                     dismiss()
                 }
             } message: {
@@ -100,10 +107,45 @@ struct WorkoutEditorView: View {
         .preferredColorScheme(.dark)
         .task {
             // Auto-focus name field for new workouts
-            if !isEditing {
+            if isNewWorkout {
                 try? await Task.sleep(for: .seconds(0.5))
                 isNameFieldFocused = true
             }
+        }
+        .onChange(of: name) { _, _ in scheduleAutoSave() }
+        .onChange(of: workTime) { _, _ in scheduleAutoSave() }
+        .onChange(of: restTime) { _, _ in scheduleAutoSave() }
+        .onChange(of: exercises) { _, _ in scheduleAutoSave() }
+        .onDisappear {
+            saveTask?.cancel()
+            // If new workout was never valid, it will be cleaned up by the parent
+        }
+    }
+
+    // MARK: - Save Status Indicator
+
+    @ViewBuilder
+    private var saveStatusIndicator: some View {
+        switch saveStatus {
+        case .idle:
+            EmptyView()
+        case .saving:
+            HStack(spacing: 6) {
+                ProgressView()
+                    .progressViewStyle(CircularProgressViewStyle(tint: .white.opacity(0.6)))
+                    .scaleEffect(0.7)
+                Text("Saving")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.6))
+            }
+        case .saved:
+            HStack(spacing: 4) {
+                Image(systemName: "checkmark")
+                    .font(.system(size: 11, weight: .semibold))
+                Text("Saved")
+                    .font(.system(size: 13, weight: .medium))
+            }
+            .foregroundStyle(.green.opacity(0.8))
         }
     }
 
@@ -260,16 +302,59 @@ struct WorkoutEditorView: View {
         isExerciseFieldFocused = true
     }
 
-    private func saveWorkout() {
-        let savedWorkout = Workout(
-            id: workout?.id ?? UUID(),
-            name: name.trimmingCharacters(in: .whitespaces),
-            workTime: workTime,
-            restTime: restTime,
-            exercises: exercises.map { $0.name }
-        )
-        onSave(savedWorkout)
-        dismiss()
+    // MARK: - Auto-Save
+
+    private func scheduleAutoSave() {
+        // For new workouts, don't save until valid
+        guard isValid else {
+            // If it was valid before and now isn't, we still keep the binding updated
+            // but don't persist to storage (validation prevents empty name/no exercises)
+            if hasBeenValidOnce {
+                updateBinding()
+            }
+            return
+        }
+
+        // Mark that this workout has been valid at least once
+        if !hasBeenValidOnce {
+            hasBeenValidOnce = true
+        }
+
+        saveTask?.cancel()
+        saveStatus = .saving
+
+        saveTask = Task {
+            // Debounce: wait 500ms after last change
+            try? await Task.sleep(for: .milliseconds(500))
+            guard !Task.isCancelled else { return }
+
+            // Update the binding (which updates the parent's array)
+            await MainActor.run {
+                updateBinding()
+                // Persist to storage
+                WorkoutStorage.shared.updateWorkout(workout)
+                saveStatus = .saved
+            }
+
+            // Fade out the "Saved" indicator after 2 seconds
+            try? await Task.sleep(for: .seconds(2))
+            guard !Task.isCancelled else { return }
+
+            await MainActor.run {
+                if saveStatus == .saved {
+                    withAnimation(.easeOut(duration: 0.3)) {
+                        saveStatus = .idle
+                    }
+                }
+            }
+        }
+    }
+
+    private func updateBinding() {
+        workout.name = name.trimmingCharacters(in: .whitespaces)
+        workout.workTime = workTime
+        workout.restTime = restTime
+        workout.exercises = exercises.map { $0.name }
     }
 }
 
@@ -301,7 +386,7 @@ struct ExerciseListView: View {
 
                 ExerciseRowContent(
                     index: displayIndex(for: index),
-                    name: exercise.name,
+                    name: $exercises[index].name,
                     isDragging: isBeingDragged,
                     onDelete: {
                         withAnimation(AnimationConstants.subtle) {
@@ -463,13 +548,16 @@ struct ExerciseListView: View {
 
 struct ExerciseRowContent: View {
     let index: Int
-    let name: String
+    @Binding var name: String
     var isDragging: Bool = false
     let onDelete: () -> Void
     var onMoveUp: (() -> Void)? = nil
     var onMoveDown: (() -> Void)? = nil
     var isFirst: Bool = false
     var isLast: Bool = false
+
+    @State private var isEditing = false
+    @FocusState private var isFocused: Bool
 
     var body: some View {
         HStack(spacing: 10) {
@@ -488,13 +576,34 @@ struct ExerciseRowContent: View {
                 .frame(width: 24)
                 .accessibilityHidden(true)
 
-            // Exercise name
-            Text(name)
-                .font(Typography.listItem)
-                .foregroundStyle(.white)
-                .lineLimit(1)
+            // Exercise name - tappable to edit
+            if isEditing {
+                TextField("Exercise name", text: $name)
+                    .font(Typography.listItem)
+                    .foregroundStyle(.white)
+                    .focused($isFocused)
+                    .onSubmit {
+                        isEditing = false
+                    }
+                    .onChange(of: isFocused) { _, focused in
+                        if !focused {
+                            isEditing = false
+                        }
+                    }
+            } else {
+                Text(name)
+                    .font(Typography.listItem)
+                    .foregroundStyle(.white)
+                    .lineLimit(1)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .contentShape(Rectangle())
+                    .onTapGesture {
+                        isEditing = true
+                        isFocused = true
+                    }
+            }
 
-            Spacer()
+            Spacer(minLength: 0)
 
             // Delete button - larger hitbox for accessibility
             Button {
@@ -522,7 +631,7 @@ struct ExerciseRowContent: View {
         .shadow(color: isDragging ? .black.opacity(0.3) : .clear, radius: 8, y: 4)
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Exercise \(index), \(name)")
-        .accessibilityHint("Long press and drag to reorder")
+        .accessibilityHint("Tap to edit, long press and drag to reorder")
         .accessibilityActions {
             if let onMoveUp = onMoveUp, !isFirst {
                 Button("Move Up") {
@@ -545,16 +654,16 @@ struct ExerciseRowContent: View {
 
 #Preview("New") {
     WorkoutEditorView(
-        workout: nil,
-        onSave: { _ in },
+        workout: .constant(Workout(name: "", exercises: [])),
+        isNewWorkout: true,
         onDelete: nil
     )
 }
 
 #Preview("Edit") {
     WorkoutEditorView(
-        workout: .sampleUpperBody,
-        onSave: { _ in },
+        workout: .constant(.sampleUpperBody),
+        isNewWorkout: false,
         onDelete: { _ in }
     )
 }

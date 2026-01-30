@@ -20,6 +20,7 @@ struct SettingsCard: View {
     let workouts: [Workout]
     let onManageWorkouts: () -> Void
     let onCreateWorkout: () -> Void
+    @Binding var isOnWorkoutsTabWithNoWorkouts: Bool
 
     @State private var mode: TimerMode = .timer
     @Namespace private var tabNamespace
@@ -51,6 +52,10 @@ struct SettingsCard: View {
             if selectedWorkout != nil {
                 mode = .workouts
             }
+            updateIsOnWorkoutsTabWithNoWorkouts()
+        }
+        .onChange(of: mode) { _, _ in
+            updateIsOnWorkoutsTabWithNoWorkouts()
         }
         .onChange(of: workouts) { _, newWorkouts in
             // Auto-switch to timer mode if workouts become empty
@@ -72,7 +77,12 @@ struct SettingsCard: View {
                     }
                 }
             }
+            updateIsOnWorkoutsTabWithNoWorkouts()
         }
+    }
+
+    private func updateIsOnWorkoutsTabWithNoWorkouts() {
+        isOnWorkoutsTabWithNoWorkouts = mode == .workouts && workouts.isEmpty
     }
 
     // MARK: - Tab Selector
@@ -353,7 +363,8 @@ struct GlassSettingRow: View {
             rounds: .constant(8),
             workouts: [.sampleUpperBody, .sampleCore],
             onManageWorkouts: {},
-            onCreateWorkout: {}
+            onCreateWorkout: {},
+            isOnWorkoutsTabWithNoWorkouts: .constant(false)
         )
     }
 }
@@ -369,7 +380,8 @@ struct GlassSettingRow: View {
             rounds: .constant(8),
             workouts: [],
             onManageWorkouts: {},
-            onCreateWorkout: {}
+            onCreateWorkout: {},
+            isOnWorkoutsTabWithNoWorkouts: .constant(false)
         )
     }
 }

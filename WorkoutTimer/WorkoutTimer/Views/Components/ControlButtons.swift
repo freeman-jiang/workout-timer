@@ -87,6 +87,7 @@ struct ControlButtons: View {
             .accessibilityHint("Double tap to \(buttonText.lowercased()) the timer")
             .disabled(isStartDisabled)
             .opacity(isStartDisabled ? 0.5 : 1.0)
+            .animation(.easeInOut(duration: 0.2), value: isStartDisabled)
 
             // Cancel button - only show when workout is active
             if isWorkoutActive {

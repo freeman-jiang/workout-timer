@@ -6,8 +6,8 @@ struct TimerView: View {
     @State private var audioManager = AudioManager()
     @State private var workouts: [Workout] = []
     @State private var showingWorkoutsList = false
-    @State private var showingNewWorkout = false
     @State private var timerSubscription: AnyCancellable?
+    @State private var isOnWorkoutsTabWithNoWorkouts = false
 
     // Celebration state
     @State private var showingWorkoutComplete = false
@@ -141,8 +141,9 @@ struct TimerView: View {
                                 showingWorkoutsList = true
                             },
                             onCreateWorkout: {
-                                showingNewWorkout = true
-                            }
+                                // Not used - create workout flows through WorkoutsListView
+                            },
+                            isOnWorkoutsTabWithNoWorkouts: $isOnWorkoutsTabWithNoWorkouts
                         )
                         .transition(
                             .asymmetric(
@@ -177,17 +178,6 @@ struct TimerView: View {
             .navigationDestination(isPresented: $showingWorkoutsList) {
                 WorkoutsListView(workouts: $workouts)
             }
-            .sheet(isPresented: $showingNewWorkout) {
-                WorkoutEditorView(
-                    workout: nil,
-                    onSave: { workout in
-                        workouts.append(workout)
-                        WorkoutStorage.shared.saveWorkouts(workouts)
-                        timerState.selectedWorkout = workout
-                    },
-                    onDelete: nil
-                )
-            }
         }
         .tint(.white)
         .preferredColorScheme(.dark)
@@ -221,8 +211,13 @@ struct TimerView: View {
         }
     }
 
-    /// Start button should be disabled if on workouts mode but no valid workout is selected
+    /// Start button should be disabled if on workouts tab with no workouts,
+    /// or if selected workout doesn't exist
     private var isStartDisabled: Bool {
+        // On workouts tab with no workouts = disabled
+        if isOnWorkoutsTabWithNoWorkouts {
+            return true
+        }
         // If a workout is selected but doesn't exist in the list, disable
         if let selected = timerState.selectedWorkout {
             return !workouts.contains(where: { $0.id == selected.id })

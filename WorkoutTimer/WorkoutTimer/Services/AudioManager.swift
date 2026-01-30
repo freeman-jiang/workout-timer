@@ -47,33 +47,9 @@ final class AudioManager: NSObject, AVAudioPlayerDelegate {
         }
     }
 
-    private func enableDucking() {
-        guard !isDucking else { return }
-        isDucking = true
-        do {
-            try AVAudioSession.sharedInstance().setCategory(
-                .playback,
-                mode: .default,
-                options: [.duckOthers, .mixWithOthers]
-            )
-        } catch {
-            logger.error("Failed to enable ducking: \(error.localizedDescription)")
-        }
-    }
-
-    private func disableDucking() {
-        guard isDucking else { return }
-        isDucking = false
-        do {
-            try AVAudioSession.sharedInstance().setCategory(
-                .playback,
-                mode: .default,
-                options: [.mixWithOthers]
-            )
-        } catch {
-            logger.error("Failed to disable ducking: \(error.localizedDescription)")
-        }
-    }
+    // Ducking disabled - sounds are loud enough to cut through music
+    private func enableDucking() {}
+    private func disableDucking() {}
 
     private func loadSounds() {
         for sound in [SoundEffect.countdown, .highPitch, .lowPitch, .complete] {
@@ -192,6 +168,7 @@ final class AudioManager: NSObject, AVAudioPlayerDelegate {
         do {
             let player = try AVAudioPlayer(contentsOf: url)
             player.delegate = self
+            player.volume = 0.85
             player.prepareToPlay()
 
             // Keep a strong reference so it doesn't get deallocated
