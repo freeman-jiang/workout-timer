@@ -286,7 +286,18 @@ struct TimerView: View {
     }
 
     private func loadData() {
-        workouts = WorkoutStorage.shared.loadWorkouts()
+        var loadedWorkouts = WorkoutStorage.shared.loadWorkouts()
+
+        // Clean up invalid workouts (empty name or no exercises) on startup
+        let validCount = loadedWorkouts.count
+        loadedWorkouts.removeAll { workout in
+            workout.name.trimmingCharacters(in: .whitespaces).isEmpty || workout.exercises.isEmpty
+        }
+        if loadedWorkouts.count != validCount {
+            WorkoutStorage.shared.saveWorkouts(loadedWorkouts)
+        }
+
+        workouts = loadedWorkouts
         let quickSettings = WorkoutStorage.shared.loadQuickSettings()
         timerState.quickWorkTime = quickSettings.workTime
         timerState.quickRestTime = quickSettings.restTime

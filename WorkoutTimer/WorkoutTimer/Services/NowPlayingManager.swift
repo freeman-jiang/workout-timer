@@ -60,7 +60,7 @@ final class NowPlayingManager {
         if let exercise = state.currentExerciseName {
             nowPlayingInfo[MPMediaItemPropertyArtist] = exercise
         } else {
-            nowPlayingInfo[MPMediaItemPropertyArtist] = "HIIT Timer"
+            nowPlayingInfo[MPMediaItemPropertyArtist] = "HIIT Interval Timer"
         }
 
         // Album: Round info

@@ -62,12 +62,12 @@ final class WorkoutStorage {
 
     func loadQuickSettings() -> QuickSettings {
         guard let data = UserDefaults.standard.data(forKey: quickSettingsKey) else {
-            return QuickSettings(workTime: 45, restTime: 15, rounds: 8)
+            return QuickSettings(workTime: 45, restTime: 15, rounds: 10)
         }
         do {
             return try JSONDecoder().decode(QuickSettings.self, from: data)
         } catch {
-            return QuickSettings(workTime: 45, restTime: 15, rounds: 8)
+            return QuickSettings(workTime: 45, restTime: 15, rounds: 10)
         }
     }
 

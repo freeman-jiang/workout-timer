@@ -26,6 +26,10 @@ struct SettingsCard: View {
     @Namespace private var tabNamespace
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var validWorkouts: [Workout] {
+        workouts.filter { !$0.name.trimmingCharacters(in: .whitespaces).isEmpty && !$0.exercises.isEmpty }
+    }
+
     var body: some View {
         VStack(spacing: 16) {
             // Mode tabs with glass morphing
@@ -57,18 +61,18 @@ struct SettingsCard: View {
         .onChange(of: mode) { _, _ in
             updateIsOnWorkoutsTabWithNoWorkouts()
         }
-        .onChange(of: workouts) { _, newWorkouts in
-            // Auto-switch to timer mode if workouts become empty
-            if newWorkouts.isEmpty && mode == .workouts {
+        .onChange(of: workouts) { _, _ in
+            // Auto-switch to timer mode if valid workouts become empty
+            if validWorkouts.isEmpty && mode == .workouts {
                 withAnimation(AnimationConstants.glassMorph) {
                     mode = .timer
                     selectedWorkout = nil
                 }
             }
-            // Clear selected workout if it no longer exists
+            // Clear selected workout if it no longer exists in valid workouts
             if let selected = selectedWorkout,
-               !newWorkouts.contains(where: { $0.id == selected.id }) {
-                if let first = newWorkouts.first {
+               !validWorkouts.contains(where: { $0.id == selected.id }) {
+                if let first = validWorkouts.first {
                     selectedWorkout = first
                 } else {
                     withAnimation(AnimationConstants.glassMorph) {
@@ -82,7 +86,7 @@ struct SettingsCard: View {
     }
 
     private func updateIsOnWorkoutsTabWithNoWorkouts() {
-        isOnWorkoutsTabWithNoWorkouts = mode == .workouts && workouts.isEmpty
+        isOnWorkoutsTabWithNoWorkouts = mode == .workouts && validWorkouts.isEmpty
     }
 
     // MARK: - Tab Selector
@@ -95,9 +99,9 @@ struct SettingsCard: View {
                         mode = tabMode
                         if tabMode == .timer {
                             selectedWorkout = nil
-                        } else if tabMode == .workouts && !workouts.isEmpty {
+                        } else if tabMode == .workouts && !validWorkouts.isEmpty {
                             if selectedWorkout == nil {
-                                selectedWorkout = workouts.first
+                                selectedWorkout = validWorkouts.first
                             }
                         }
                     }
@@ -173,7 +177,7 @@ struct SettingsCard: View {
 
     private var workoutsModeContent: some View {
         VStack(spacing: 12) {
-            if workouts.isEmpty {
+            if validWorkouts.isEmpty {
                 emptyWorkoutsState
             } else {
                 workoutPicker
@@ -199,7 +203,7 @@ struct SettingsCard: View {
     private var workoutPicker: some View {
         VStack(spacing: 12) {
             Picker("Workout", selection: workoutSelectionBinding) {
-                ForEach(workouts) { workout in
+                ForEach(validWorkouts) { workout in
                     Text(workout.name)
                         .tag(workout.id.uuidString)
                 }
@@ -208,7 +212,7 @@ struct SettingsCard: View {
             .frame(height: 120)
             .clipShape(.rect(cornerRadius: 12))
             .onAppear {
-                if selectedWorkout == nil, let first = workouts.first {
+                if selectedWorkout == nil, let first = validWorkouts.first {
                     selectedWorkout = first
                 }
             }
@@ -239,10 +243,10 @@ struct SettingsCard: View {
     private var workoutSelectionBinding: Binding<String> {
         Binding(
             get: {
-                selectedWorkout?.id.uuidString ?? workouts.first?.id.uuidString ?? ""
+                selectedWorkout?.id.uuidString ?? validWorkouts.first?.id.uuidString ?? ""
             },
             set: { newValue in
-                if let workout = workouts.first(where: { $0.id.uuidString == newValue }) {
+                if let workout = validWorkouts.first(where: { $0.id.uuidString == newValue }) {
                     selectedWorkout = workout
                 }
             }

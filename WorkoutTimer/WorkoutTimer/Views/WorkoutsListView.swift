@@ -18,7 +18,7 @@ struct WorkoutsListView: View {
             AnimatedPhaseBackground(phase: .ready, isRunning: false)
 
             VStack(spacing: 0) {
-                if workouts.isEmpty {
+                if validWorkouts.isEmpty {
                     emptyState
                 } else {
                     workoutsList
@@ -44,18 +44,21 @@ struct WorkoutsListView: View {
             }
         }
         .sheet(item: $newWorkout) { workout in
-            WorkoutEditorView(
-                workout: Binding(
-                    get: { newWorkout ?? workout },
-                    set: { newWorkout = $0 }
-                ),
-                isNewWorkout: true,
-                onDelete: nil,
-                onSave: { savedWorkout in
-                    workouts.append(savedWorkout)
-                    WorkoutStorage.shared.saveWorkouts(workouts)
+            if let index = workouts.firstIndex(where: { $0.id == workout.id }) {
+                WorkoutEditorView(
+                    workout: $workouts[index],
+                    isNewWorkout: false,
+                    onDelete: { toDelete in
+                        workouts.removeAll { $0.id == toDelete.id }
+                        WorkoutStorage.shared.saveWorkouts(workouts)
+                    }
+                )
+                .onDisappear {
+                    // Clean up invalid workouts when sheet closes
+                    cleanupInvalidWorkouts()
+                    newWorkout = nil
                 }
-            )
+            }
         }
         .sheet(item: $editingWorkoutIndex) { index in
             if index < workouts.count {
@@ -75,13 +78,24 @@ struct WorkoutsListView: View {
     // MARK: - Actions
 
     private func createNewWorkout() {
-        newWorkout = Workout(
+        let workout = Workout(
             id: UUID(),
             name: "",
             workTime: 45,
             restTime: 15,
             exercises: []
         )
+        workouts.append(workout)
+        // Don't save yet - will save on dismiss if valid
+        newWorkout = workout
+    }
+
+    private func cleanupInvalidWorkouts() {
+        let before = workouts.count
+        workouts.removeAll { $0.name.trimmingCharacters(in: .whitespaces).isEmpty || $0.exercises.isEmpty }
+        if workouts.count != before {
+            WorkoutStorage.shared.saveWorkouts(workouts)
+        }
     }
 
     private var emptyState: some View {
@@ -124,12 +138,18 @@ struct WorkoutsListView: View {
         .padding(.horizontal, 24)
     }
 
+    private var validWorkouts: [(index: Int, workout: Workout)] {
+        workouts.enumerated()
+            .filter { !$0.element.name.trimmingCharacters(in: .whitespaces).isEmpty && !$0.element.exercises.isEmpty }
+            .map { (index: $0.offset, workout: $0.element) }
+    }
+
     private var workoutsList: some View {
         ScrollView {
             LazyVStack(spacing: 12) {
-                ForEach(Array(workouts.enumerated()), id: \.element.id) { index, workout in
-                    GlassWorkoutCard(workout: workout) {
-                        editingWorkoutIndex = index
+                ForEach(validWorkouts, id: \.workout.id) { item in
+                    GlassWorkoutCard(workout: item.workout) {
+                        editingWorkoutIndex = item.index
                     }
                 }
             }

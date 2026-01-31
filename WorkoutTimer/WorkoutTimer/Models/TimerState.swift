@@ -11,7 +11,7 @@ final class TimerState {
     var selectedWorkout: Workout?
     var quickWorkTime: Int = 45
     var quickRestTime: Int = 15
-    var quickRounds: Int = 8
+    var quickRounds: Int = 10
 
     // MARK: - Timer State
     private(set) var currentPhase: TimerPhase = .ready
