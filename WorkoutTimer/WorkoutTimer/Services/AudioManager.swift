@@ -32,7 +32,7 @@ final class AudioManager {
     private var sourceNode: AVAudioSourceNode!
 
     private let sampleRate: Float = 48000
-    private let amplitude: Float = 0.8
+    private let amplitude: Float = 0.6
 
     // Thread-safe communication with audio thread via lock
     private let lock = NSLock()
@@ -49,12 +49,12 @@ final class AudioManager {
     // Scheduled sound work items
     private var scheduledWorkItems: [DispatchWorkItem] = []
 
-    // Frequency definitions - all same tone
+    // Frequency definitions
     private let frequencies: [ToneType: Float] = [
-        .countdown: 330,    // E4
-        .highPitch: 330,    // E4
-        .lowPitch: 330,     // E4
-        .complete: 330      // E4
+        .countdown: 330,    // E4 - countdown beeps
+        .highPitch: 440,    // A4 - work/rest phase transition
+        .lowPitch: 440,     // A4 - work/rest phase transition
+        .complete: 440      // A4 - workout complete
     ]
 
     init() {

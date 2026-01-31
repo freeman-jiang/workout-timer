@@ -235,11 +235,8 @@ final class TimerState {
             phaseStartTime = Date()
             displayTimeRemaining = phaseDuration
             onPhaseTransition?(.work)
-            // Schedule audio: if not last round, transition to rest; else complete
-            if currentRound < totalRounds {
-                onScheduleAudio?(phaseDuration, .rest, true)
-            }
-            // Note: last round completion handled in tick when remaining <= 0
+            // Schedule audio for countdown beeps; transition to rest (or complete on last round)
+            onScheduleAudio?(phaseDuration, .rest, true)
 
         case .work:
             // Work -> Rest (or Complete if last round)
@@ -282,10 +279,8 @@ final class TimerState {
                 phaseStartTime = Date()
                 displayTimeRemaining = phaseDuration
                 onRestStart?()
-                // Schedule audio: if not last round, transition to rest
-                if currentRound < totalRounds {
-                    onScheduleAudio?(phaseDuration, .rest, true)
-                }
+                // Schedule audio for countdown beeps; transition to rest (or complete on last round)
+                onScheduleAudio?(phaseDuration, .rest, true)
             }
 
         case .complete:
