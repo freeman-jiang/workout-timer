@@ -23,10 +23,6 @@
 		001000000014 /* NowPlayingManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000014 /* NowPlayingManager.swift */; };
 		001000000015 /* WorkoutStorage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000015 /* WorkoutStorage.swift */; };
 		001000000016 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 002000000016 /* Assets.xcassets */; };
-		001000000017 /* countdown.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 002000000017 /* countdown.mp3 */; };
-		001000000018 /* phase.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 002000000018 /* phase.mp3 */; };
-		001000000019 /* rest.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 002000000019 /* rest.mp3 */; };
-		001000000020 /* complete.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 002000000020 /* complete.mp3 */; };
 		001000000021 /* Typography.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000021 /* Typography.swift */; };
 		001000000022 /* AnimationConstants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000022 /* AnimationConstants.swift */; };
 		001000000023 /* GlassButtonStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000023 /* GlassButtonStyle.swift */; };
@@ -53,10 +49,6 @@
 		002000000014 /* NowPlayingManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NowPlayingManager.swift; sourceTree = "<group>"; };
 		002000000015 /* WorkoutStorage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutStorage.swift; sourceTree = "<group>"; };
 		002000000016 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
-		002000000017 /* countdown.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = countdown.mp3; sourceTree = "<group>"; };
-		002000000018 /* phase.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = phase.mp3; sourceTree = "<group>"; };
-		002000000019 /* rest.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = rest.mp3; sourceTree = "<group>"; };
-		002000000020 /* complete.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = complete.mp3; sourceTree = "<group>"; };
 		002000000021 /* Typography.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Typography.swift; sourceTree = "<group>"; };
 		002000000022 /* AnimationConstants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimationConstants.swift; sourceTree = "<group>"; };
 		002000000023 /* GlassButtonStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassButtonStyle.swift; sourceTree = "<group>"; };
@@ -174,10 +166,6 @@
 		005000000010 /* Sounds */ = {
 			isa = PBXGroup;
 			children = (
-				002000000017 /* countdown.mp3 */,
-				002000000018 /* phase.mp3 */,
-				002000000019 /* rest.mp3 */,
-				002000000020 /* complete.mp3 */,
 			);
 			path = Sounds;
 			sourceTree = "<group>";
@@ -252,10 +240,6 @@
 			files = (
 				C1B79F642F2C1D410007DBC3 /* PrivacyInfo.xcprivacy in Resources */,
 				001000000016 /* Assets.xcassets in Resources */,
-				001000000017 /* countdown.mp3 in Resources */,
-				001000000018 /* phase.mp3 in Resources */,
-				001000000019 /* rest.mp3 in Resources */,
-				001000000020 /* complete.mp3 in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

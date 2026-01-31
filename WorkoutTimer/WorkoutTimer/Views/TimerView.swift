@@ -238,29 +238,35 @@ struct TimerView: View {
 
     private func setupTimer() {
         // Setup callbacks for audio and haptics
-        timerState.onCountdownBeep = { [audioManager] in
-            audioManager.playCountdownBeep()
+
+        // Countdown beep callback - now only triggers haptics (audio is hardware-scheduled)
+        timerState.onCountdownBeep = {
             HapticManager.shared.countdownBeep()
         }
 
-        timerState.onPhaseTransition = { [audioManager] (phase: TimerPhase) in
-            switch phase {
-            case .work:
-                // Warmup -> Work: high pitch (start of race)
-                audioManager.playWorkStart()
-            case .rest:
-                // Work -> Rest: low pitch
-                audioManager.playRestStart()
-            default:
-                break
-            }
+        // Schedule audio when a phase starts (uses hardware clock for precise timing)
+        timerState.onScheduleAudio = { [audioManager] (duration: TimeInterval, nextPhase: TimerPhase, playTransitionNow: Bool) in
+            let transitionSound: SoundEffect = nextPhase == .work ? .highPitch : .lowPitch
+            audioManager.scheduleCountdownAndTransition(
+                phaseDuration: duration,
+                transitionSound: transitionSound,
+                transitionTimes: 2,
+                playTransitionNow: playTransitionNow
+            )
+        }
+
+        timerState.onCancelScheduledAudio = { [audioManager] in
+            audioManager.cancelScheduledSounds()
+        }
+
+        timerState.onPhaseTransition = { (phase: TimerPhase) in
+            // Audio already played via scheduling, just do haptics and UI update
             HapticManager.shared.phaseTransition()
             updateNowPlaying()
         }
 
-        timerState.onRestStart = { [audioManager] in
-            // Rest -> Work: high pitch (start of race)
-            audioManager.playWorkStart()
+        timerState.onRestStart = {
+            // Audio already played via scheduling, just do haptics and UI update
             HapticManager.shared.phaseTransition()
             updateNowPlaying()
         }
@@ -285,7 +291,7 @@ struct TimerView: View {
             audioManager.stopBackgroundAudio()
         }
 
-        // Start the tick timer (100ms interval)
+        // Start the tick timer (100ms interval) - only for UI updates now
         timerSubscription = Timer.publish(every: 0.1, on: .main, in: .common)
             .autoconnect()
             .sink { _ in

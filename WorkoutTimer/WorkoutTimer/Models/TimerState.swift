@@ -32,6 +32,12 @@ final class TimerState {
     var onTimerStart: (() -> Void)?
     var onTimerStop: (() -> Void)?
 
+    /// Called when a phase starts to schedule countdown beeps and transition sound
+    /// Parameters: (phaseDuration, nextPhase where .work means high pitch, .rest means low pitch, playTransitionNow)
+    var onScheduleAudio: ((TimeInterval, TimerPhase, Bool) -> Void)?
+    /// Called when timer is paused/reset to cancel scheduled audio
+    var onCancelScheduledAudio: (() -> Void)?
+
     // MARK: - Beep tracking
     private var lastBeepedSecond: Int = -1
 
@@ -153,6 +159,8 @@ final class TimerState {
         lastBeepedSecond = -1
         displayTimeRemaining = warmupDuration
         onTimerStart?()
+        // Schedule countdown and work-start sound for end of warmup (no transition sound at start)
+        onScheduleAudio?(warmupDuration, .work, false)
     }
 
     func pause() {
@@ -161,6 +169,7 @@ final class TimerState {
         displayTimeRemaining = pausedTimeRemaining
         isPaused = true
         isRunning = false
+        onCancelScheduledAudio?()
     }
 
     func resume() {
@@ -169,6 +178,9 @@ final class TimerState {
         isRunning = true
         // Recalculate phaseStartTime so that timeRemaining picks up from where we left off
         phaseStartTime = Date().addingTimeInterval(-(phaseDuration - pausedTimeRemaining))
+        // Re-schedule audio for remaining time (no transition sound on resume)
+        let nextPhase: TimerPhase = currentPhase == .work ? .rest : .work
+        onScheduleAudio?(pausedTimeRemaining, nextPhase, false)
     }
 
     func reset() {
@@ -181,6 +193,7 @@ final class TimerState {
         pausedTimeRemaining = 0
         lastBeepedSecond = -1
         displayTimeRemaining = 0
+        onCancelScheduledAudio?()
         onTimerStop?()
     }
 
@@ -193,11 +206,12 @@ final class TimerState {
         // Update the display property to trigger UI refresh
         displayTimeRemaining = remaining
 
-        // Handle countdown beeps at 3, 2, 1 seconds
-        let secondsLeft = Int(ceil(remaining))
-        if secondsLeft <= 3 && secondsLeft >= 1 && secondsLeft != lastBeepedSecond {
+        // Countdown beeps are now hardware-scheduled via onScheduleAudio
+        // Haptic feedback still uses polling for visual sync
+        let secondsLeft = Int(floor(remaining))
+        if secondsLeft <= 2 && secondsLeft >= 0 && secondsLeft != lastBeepedSecond {
             lastBeepedSecond = secondsLeft
-            onCountdownBeep?()
+            onCountdownBeep?()  // Now only triggers haptics, not audio
         }
 
         // Check for phase transition
@@ -221,6 +235,11 @@ final class TimerState {
             phaseStartTime = Date()
             displayTimeRemaining = phaseDuration
             onPhaseTransition?(.work)
+            // Schedule audio: if not last round, transition to rest; else complete
+            if currentRound < totalRounds {
+                onScheduleAudio?(phaseDuration, .rest, true)
+            }
+            // Note: last round completion handled in tick when remaining <= 0
 
         case .work:
             // Work -> Rest (or Complete if last round)
@@ -240,6 +259,8 @@ final class TimerState {
                 phaseStartTime = Date()
                 displayTimeRemaining = phaseDuration
                 onPhaseTransition?(.rest)
+                // Schedule audio for transition to next work phase
+                onScheduleAudio?(phaseDuration, .work, true)
             }
 
         case .rest:
@@ -261,6 +282,10 @@ final class TimerState {
                 phaseStartTime = Date()
                 displayTimeRemaining = phaseDuration
                 onRestStart?()
+                // Schedule audio: if not last round, transition to rest
+                if currentRound < totalRounds {
+                    onScheduleAudio?(phaseDuration, .rest, true)
+                }
             }
 
         case .complete:
