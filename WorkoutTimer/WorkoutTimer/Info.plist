@@ -9,9 +9,9 @@
 		<string>audio</string>
 	</array>
 	<key>CFBundleDisplayName</key>
-	<string>Workout Timer</string>
+	<string>HIIT Timer</string>
 	<key>CFBundleName</key>
-	<string>WorkoutTimer</string>
+	<string>HIIT Timer</string>
 	<key>CFBundleShortVersionString</key>
 	<string>1.0</string>
 	<key>CFBundleVersion</key>

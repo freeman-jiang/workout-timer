@@ -56,11 +56,11 @@ final class NowPlayingManager {
         // Title: Phase name
         nowPlayingInfo[MPMediaItemPropertyTitle] = state.currentPhase.displayText
 
-        // Artist: Exercise name or "Workout Timer"
+        // Artist: Exercise name or "HIIT Timer"
         if let exercise = state.currentExerciseName {
             nowPlayingInfo[MPMediaItemPropertyArtist] = exercise
         } else {
-            nowPlayingInfo[MPMediaItemPropertyArtist] = "Workout Timer"
+            nowPlayingInfo[MPMediaItemPropertyArtist] = "HIIT Timer"
         }
 
         // Album: Round info
