@@ -153,7 +153,7 @@ struct WorkoutsListView: View {
                     }
                 }
             }
-            .padding(.horizontal, 24)
+            .padding(.horizontal, 16)
             .padding(.top, 16)
             .padding(.bottom, 32)
         }

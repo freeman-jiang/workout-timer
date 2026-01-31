@@ -45,6 +45,8 @@ struct TimerView: View {
                             Text(workoutName)
                                 .font(Typography.exercise)
                                 .foregroundStyle(.white)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 16)
                                 .padding(.bottom, 8)
                                 .transition(.opacity)
                         } else if timerState.currentPhase == .warmup,
@@ -53,6 +55,8 @@ struct TimerView: View {
                             Text(firstExercise)
                                 .font(Typography.exercise)
                                 .foregroundStyle(.white)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 16)
                                 .padding(.bottom, 8)
                                 .transition(.opacity)
                         } else if timerState.currentPhase == .rest,
@@ -61,6 +65,8 @@ struct TimerView: View {
                             Text(nextExercise)
                                 .font(Typography.exercise)
                                 .foregroundStyle(.white)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 16)
                                 .padding(.bottom, 8)
                                 .transition(.opacity)
                         } else if timerState.currentPhase == .work,
@@ -69,6 +75,8 @@ struct TimerView: View {
                             Text(exerciseName)
                                 .font(Typography.exercise)
                                 .foregroundStyle(.white)
+                                .multilineTextAlignment(.center)
+                                .padding(.horizontal, 16)
                                 .padding(.bottom, 8)
                                 .transition(.opacity)
                         }
@@ -286,18 +294,7 @@ struct TimerView: View {
     }
 
     private func loadData() {
-        var loadedWorkouts = WorkoutStorage.shared.loadWorkouts()
-
-        // Clean up invalid workouts (empty name or no exercises) on startup
-        let validCount = loadedWorkouts.count
-        loadedWorkouts.removeAll { workout in
-            workout.name.trimmingCharacters(in: .whitespaces).isEmpty || workout.exercises.isEmpty
-        }
-        if loadedWorkouts.count != validCount {
-            WorkoutStorage.shared.saveWorkouts(loadedWorkouts)
-        }
-
-        workouts = loadedWorkouts
+        workouts = WorkoutStorage.shared.loadWorkouts()
         let quickSettings = WorkoutStorage.shared.loadQuickSettings()
         timerState.quickWorkTime = quickSettings.workTime
         timerState.quickRestTime = quickSettings.restTime
