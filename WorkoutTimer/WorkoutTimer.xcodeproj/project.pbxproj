@@ -32,6 +32,7 @@
 		C1B79F642F2C1D410007DBC3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C1B79F632F2C1D410007DBC3 /* PrivacyInfo.xcprivacy */; };
 		C1EBCAA22F32C9CE000FB97B /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EBCAA12F32C9CE000FB97B /* AppSettings.swift */; };
 		C1EBCAA42F32CA00000FB97B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EBCAA32F32CA00000FB97B /* SettingsView.swift */; };
+		C1EBCAA62F32CB00000FB97B /* SpeechManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EBCAA52F32CB00000FB97B /* SpeechManager.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -61,6 +62,7 @@
 		C1B79F632F2C1D410007DBC3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 		C1EBCAA12F32C9CE000FB97B /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
 		C1EBCAA32F32CA00000FB97B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		C1EBCAA52F32CB00000FB97B /* SpeechManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpeechManager.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -135,6 +137,7 @@
 				002000000012 /* AudioManager.swift */,
 				002000000013 /* HapticManager.swift */,
 				002000000014 /* NowPlayingManager.swift */,
+				C1EBCAA52F32CB00000FB97B /* SpeechManager.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -276,6 +279,7 @@
 				001000000022 /* AnimationConstants.swift in Sources */,
 				C1EBCAA22F32C9CE000FB97B /* AppSettings.swift in Sources */,
 				C1EBCAA42F32CA00000FB97B /* SettingsView.swift in Sources */,
+				C1EBCAA62F32CB00000FB97B /* SpeechManager.swift in Sources */,
 				001000000023 /* GlassButtonStyle.swift in Sources */,
 				001000000024 /* AnimatedPhaseBackground.swift in Sources */,
 				001000000025 /* WorkoutCompleteOverlay.swift in Sources */,

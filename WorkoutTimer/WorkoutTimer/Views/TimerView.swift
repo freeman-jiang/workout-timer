@@ -4,6 +4,7 @@ import Combine
 struct TimerView: View {
     @State private var timerState = TimerState()
     @State private var audioManager = AudioManager()
+    @State private var speechManager = SpeechManager()
     @State private var workouts: [Workout] = []
     @State private var showingWorkoutsList = false
     @State private var timerSubscription: AnyCancellable?
@@ -283,10 +284,17 @@ struct TimerView: View {
             audioManager.cancelScheduledSounds()
         }
 
-        timerState.onPhaseTransition = { (phase: TimerPhase) in
+        timerState.onPhaseTransition = { [speechManager] (phase: TimerPhase) in
             // Audio already played via scheduling, just do haptics and UI update
             HapticManager.shared.phaseTransition()
             updateNowPlaying()
+
+            // Announce next exercise when entering rest phase (after 1s delay)
+            if phase == .rest, let nextExercise = timerState.nextExerciseName {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    speechManager.announce(nextExercise)
+                }
+            }
         }
 
         timerState.onRestStart = {
@@ -307,8 +315,15 @@ struct TimerView: View {
             updateNowPlaying()
         }
 
-        timerState.onTimerStart = { [audioManager] in
+        timerState.onTimerStart = { [audioManager, speechManager] in
             audioManager.startBackgroundAudio()
+
+            // Announce first exercise during warmup (after 1s delay)
+            if let exercise = timerState.currentExerciseName {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 1.0) {
+                    speechManager.announce(exercise)
+                }
+            }
         }
 
         timerState.onTimerStop = { [audioManager] in

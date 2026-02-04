@@ -15,9 +15,11 @@ final class AppSettings {
     // MARK: - Settings
 
     private(set) var volume: Float = 1.0
+    private(set) var announceExercises: Bool = false
 
     private struct Settings: Codable {
         var volume: Float
+        var announceExercises: Bool?
     }
 
     // MARK: - Persistence
@@ -29,13 +31,14 @@ final class AppSettings {
         do {
             let settings = try JSONDecoder().decode(Settings.self, from: data)
             volume = settings.volume
+            announceExercises = settings.announceExercises ?? false
         } catch {
             logger.error("Failed to decode app settings: \(error.localizedDescription)")
         }
     }
 
     private func saveSettings() {
-        let settings = Settings(volume: volume)
+        let settings = Settings(volume: volume, announceExercises: announceExercises)
         do {
             let data = try JSONEncoder().encode(settings)
             UserDefaults.standard.set(data, forKey: settingsKey)
@@ -48,6 +51,11 @@ final class AppSettings {
 
     func setVolume(_ newVolume: Float) {
         volume = max(0, min(1, newVolume))
+        saveSettings()
+    }
+
+    func setAnnounceExercises(_ enabled: Bool) {
+        announceExercises = enabled
         saveSettings()
     }
 }

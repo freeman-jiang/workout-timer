@@ -3,6 +3,7 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var volume: Double = Double(AppSettings.shared.volume)
+    @State private var announceExercises: Bool = AppSettings.shared.announceExercises
     @State private var audioManager = AudioManager()
     @State private var isDragging = false
     @State private var previewTimer: Timer?
@@ -44,6 +45,30 @@ struct SettingsView: View {
                             .tint(.white)
                             .onChange(of: volume) { _, newValue in
                                 AppSettings.shared.setVolume(Float(newValue))
+                            }
+                    }
+                    .padding(16)
+                    .glassBackground(cornerRadius: 16)
+
+                    // Announce exercises toggle
+                    HStack(spacing: 12) {
+                        Image(systemName: "text.bubble.fill")
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .frame(width: 28, height: 28)
+                            .glassCircle()
+
+                        Text("Announce Exercises")
+                            .font(Typography.settingLabel)
+                            .foregroundStyle(.white.opacity(0.85))
+
+                        Spacer()
+
+                        Toggle("", isOn: $announceExercises)
+                            .labelsHidden()
+                            .tint(Color(hex: "ea580c"))
+                            .onChange(of: announceExercises) { _, newValue in
+                                AppSettings.shared.setAnnounceExercises(newValue)
                             }
                     }
                     .padding(16)
