@@ -189,19 +189,21 @@ struct TimerView: View {
             .navigationDestination(isPresented: $showingWorkoutsList) {
                 WorkoutsListView(workouts: $workouts)
             }
-            .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        showingSettings = true
-                    } label: {
-                        Image(systemName: "gearshape")
-                            .font(.system(size: 14, weight: .medium))
-                            .foregroundStyle(.white)
-                            .frame(width: 36, height: 36)
-                            .glassCircle()
-                    }
-                    .buttonStyle(IconGlassButtonStyle())
+            .overlay(alignment: .topTrailing) {
+                Button {
+                    showingSettings = true
+                } label: {
+                    Image(systemName: "gearshape")
+                        .font(.system(size: 14, weight: .medium))
+                        .foregroundStyle(.white)
+                        .frame(width: 36, height: 36)
+                        .glassCircle()
                 }
+                .buttonStyle(IconGlassButtonStyle())
+                .padding(.top, 8)
+                .padding(.trailing, 16)
+                .opacity(timerState.isRunning ? 0 : 1)
+                .animation(.easeInOut(duration: 0.25), value: timerState.isRunning)
             }
             .sheet(isPresented: $showingSettings) {
                 SettingsView()
