@@ -84,7 +84,10 @@ struct WorkoutEditorView: View {
                     }
                     .padding(16)
                 }
-                .scrollDismissesKeyboard(.interactively)
+                .scrollDismissesKeyboard(.immediately)
+                .onTapGesture {
+                    dismissKeyboard()
+                }
             }
             .navigationTitle(isNewWorkout ? "New Workout" : "Edit Workout")
             .navigationBarTitleDisplayMode(.inline)
@@ -150,6 +153,7 @@ struct WorkoutEditorView: View {
                     .font(.system(size: 13, weight: .medium))
                     .foregroundStyle(.white.opacity(0.6))
             }
+            .padding(.horizontal, 16)
         case .saved:
             HStack(spacing: 4) {
                 Image(systemName: "checkmark")
@@ -158,6 +162,8 @@ struct WorkoutEditorView: View {
                     .font(.system(size: 13, weight: .medium))
             }
             .foregroundStyle(.green.opacity(0.8))
+            .padding(.leading, 12)
+            .padding(.trailing, 16)
         }
     }
 
@@ -237,8 +243,15 @@ struct WorkoutEditorView: View {
                     .glassBackground(cornerRadius: 12)
                     .contentShape(Rectangle())
                     .focused($isExerciseFieldFocused)
+                    .submitLabel(.done)
                     .onSubmit {
-                        addExercise()
+                        if !newExercise.trimmingCharacters(in: .whitespaces).isEmpty {
+                            addExercise()
+                            // Re-focus after a brief delay to keep keyboard up
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                isExerciseFieldFocused = true
+                            }
+                        }
                     }
 
                 Button {
@@ -309,9 +322,6 @@ struct WorkoutEditorView: View {
         }
         newExercise = ""
         HapticManager.shared.buttonTap()
-
-        // Keep focus on exercise field for adding multiple exercises
-        isExerciseFieldFocused = true
     }
 
     // MARK: - Auto-Save
@@ -393,30 +403,19 @@ struct ExerciseItem: Identifiable, Equatable {
     }
 }
 
-// MARK: - Exercise List View (Gesture-based drag reordering)
+// MARK: - Exercise List View (Native List with onMove)
 
 struct ExerciseListView: View {
     @Binding var exercises: [ExerciseItem]
     let onDelete: (IndexSet) -> Void
     let onMove: (IndexSet, Int) -> Void
 
-    @State private var draggingItem: ExerciseItem?
-    @State private var draggingIndex: Int?  // Cached drag index to avoid O(n) lookups
-    @State private var dragOffset: CGFloat = 0
-    @State private var currentTargetIndex: Int?
-    @GestureState private var isDragging = false
-
-    private let rowHeight: CGFloat = 56
-
     var body: some View {
-        VStack(spacing: 0) {
+        List {
             ForEach(Array(exercises.enumerated()), id: \.element.id) { index, exercise in
-                let isBeingDragged = draggingItem?.id == exercise.id
-
                 ExerciseRowContent(
-                    index: displayIndex(for: index),
+                    index: index + 1,
                     name: $exercises[index].name,
-                    isDragging: isBeingDragged,
                     onDelete: {
                         withAnimation(AnimationConstants.subtle) {
                             exercises.removeAll { $0.id == exercise.id }
@@ -440,135 +439,30 @@ struct ExerciseListView: View {
                     isFirst: index == 0,
                     isLast: index == exercises.count - 1
                 )
-                .zIndex(isBeingDragged ? 1 : 0)
-                .offset(y: isBeingDragged ? dragOffset : offsetForRow(at: index))
-                .animation(.snappy(duration: 0.25), value: currentTargetIndex)
-                .gesture(
-                    LongPressGesture(minimumDuration: 0.15)
-                        .sequenced(before: DragGesture())
-                        .updating($isDragging) { value, state, _ in
-                            if case .second(true, _) = value {
-                                state = true
-                            }
-                        }
-                        .onChanged { value in
-                            switch value {
-                            case .second(true, let drag):
-                                if draggingItem == nil {
-                                    withAnimation(.snappy(duration: 0.2)) {
-                                        draggingItem = exercise
-                                        draggingIndex = index
-                                        currentTargetIndex = index
-                                    }
-                                    HapticManager.shared.buttonTap()
-                                }
-                                if let drag = drag {
-                                    dragOffset = drag.translation.height
-                                    updateTargetIndex(from: index)
-                                }
-                            default:
-                                break
-                            }
-                        }
-                        .onEnded { value in
-                            if case .second(true, _) = value {
-                                finishDrag(from: index)
-                            }
-                        }
+                .listRowBackground(
+                    RoundedRectangle(cornerRadius: 10)
+                        .fill(Color.clear)
                 )
-
-                // Separator
-                if index < exercises.count - 1 {
-                    Rectangle()
-                        .fill(.white.opacity(0.08))
-                        .frame(height: 1)
-                        .padding(.leading, 48)
-                        .opacity(isBeingDragged ? 0 : 1)
+                .listRowSeparator(index < exercises.count - 1 ? .visible : .hidden, edges: .bottom)
+                .listRowSeparatorTint(.white.opacity(0.15))
+                .listRowInsets(EdgeInsets(top: 2, leading: 4, bottom: 2, trailing: 4))
+            }
+            .onMove { from, to in
+                exercises.move(fromOffsets: from, toOffset: to)
+                HapticManager.shared.buttonTap()
+            }
+            .onDelete { indexSet in
+                withAnimation(AnimationConstants.subtle) {
+                    exercises.remove(atOffsets: indexSet)
                 }
+                HapticManager.shared.buttonTap()
             }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .scrollDisabled(true)  // Disable inner scroll - parent ScrollView handles it
         .glassBackground(cornerRadius: 12)
-        .onChange(of: isDragging) { _, newValue in
-            if !newValue && draggingItem != nil {
-                // Gesture was cancelled
-                resetDrag()
-            }
-        }
-    }
-
-    private func updateTargetIndex(from dragIndex: Int) {
-        let newTarget = calculateTargetIndex(for: dragOffset, from: dragIndex)
-        if newTarget != currentTargetIndex {
-            withAnimation(.snappy(duration: 0.2)) {
-                currentTargetIndex = newTarget
-            }
-            HapticManager.shared.selection()
-        }
-    }
-
-    private func displayIndex(for arrayIndex: Int) -> Int {
-        guard let dragIndex = draggingIndex,
-              let targetIdx = currentTargetIndex else {
-            return arrayIndex + 1
-        }
-
-        if arrayIndex == dragIndex {
-            return targetIdx + 1
-        } else if dragIndex < arrayIndex && arrayIndex <= targetIdx {
-            return arrayIndex
-        } else if targetIdx <= arrayIndex && arrayIndex < dragIndex {
-            return arrayIndex + 2
-        }
-        return arrayIndex + 1
-    }
-
-    private func offsetForRow(at index: Int) -> CGFloat {
-        guard let dragIndex = draggingIndex,
-              let targetIdx = currentTargetIndex else {
-            return 0
-        }
-
-        if index == dragIndex {
-            return 0
-        } else if dragIndex < index && index <= targetIdx {
-            return -rowHeight
-        } else if targetIdx <= index && index < dragIndex {
-            return rowHeight
-        }
-        return 0
-    }
-
-    private func calculateTargetIndex(for offset: CGFloat, from startIndex: Int) -> Int {
-        let rowsMoved = Int(round(offset / rowHeight))
-        let newIndex = startIndex + rowsMoved
-        return max(0, min(exercises.count - 1, newIndex))
-    }
-
-    private func finishDrag(from originalIndex: Int) {
-        guard let fromIndex = draggingIndex,
-              let toIndex = currentTargetIndex else {
-            resetDrag()
-            return
-        }
-
-        if fromIndex != toIndex {
-            withAnimation(.snappy(duration: 0.25)) {
-                let item = exercises.remove(at: fromIndex)
-                exercises.insert(item, at: toIndex)
-            }
-            HapticManager.shared.buttonTap()
-        }
-
-        resetDrag()
-    }
-
-    private func resetDrag() {
-        withAnimation(.snappy(duration: 0.25)) {
-            draggingItem = nil
-            draggingIndex = nil
-            dragOffset = 0
-            currentTargetIndex = nil
-        }
+        .frame(height: CGFloat(exercises.count) * 60)  // Row height + padding
     }
 }
 
@@ -577,8 +471,7 @@ struct ExerciseListView: View {
 struct ExerciseRowContent: View {
     let index: Int
     @Binding var name: String
-    var isDragging: Bool = false
-    let onDelete: () -> Void
+    var onDelete: (() -> Void)? = nil
     var onMoveUp: (() -> Void)? = nil
     var onMoveDown: (() -> Void)? = nil
     var isFirst: Bool = false
@@ -589,14 +482,6 @@ struct ExerciseRowContent: View {
 
     var body: some View {
         HStack(spacing: 10) {
-            // Drag handle
-            Image(systemName: "line.3.horizontal")
-                .font(.system(size: 14, weight: .medium))
-                .foregroundStyle(.white.opacity(isDragging ? 0.6 : 0.35))
-                .frame(width: 36, height: 56)
-                .contentShape(Rectangle())
-                .accessibilityHidden(true)
-
             // Index badge
             Text("\(index)")
                 .font(Typography.cardSubtitle.monospacedDigit())
@@ -633,33 +518,28 @@ struct ExerciseRowContent: View {
 
             Spacer(minLength: 0)
 
-            // Delete button - larger hitbox for accessibility
-            Button {
-                onDelete()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(.red.opacity(0.7))
-                    .frame(width: 32, height: 32)
-                    .background(.red.opacity(0.1), in: Circle())
+            // Small delete button
+            if let onDelete = onDelete {
+                Button {
+                    onDelete()
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 10, weight: .semibold))
+                        .foregroundStyle(.red.opacity(0.7))
+                        .frame(width: 24, height: 24)
+                        .background(.red.opacity(0.1), in: Circle())
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
-            .frame(width: 44, height: 44)
-            .contentShape(Rectangle())
-            .accessibilityLabel("Delete \(name)")
         }
-        .padding(.trailing, 8)
+        .padding(.leading, 8)
+        .padding(.trailing, 12)
         .frame(height: 56)
-        .background(
-            RoundedRectangle(cornerRadius: 8)
-                .fill(isDragging ? Color.white.opacity(0.1) : Color.clear)
-                .padding(.horizontal, 4)
-        )
-        .scaleEffect(isDragging ? 1.02 : 1.0)
-        .shadow(color: isDragging ? .black.opacity(0.3) : .clear, radius: 8, y: 4)
+        .background(RoundedRectangle(cornerRadius: 10).fill(Color.clear))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
         .accessibilityElement(children: .combine)
         .accessibilityLabel("Exercise \(index), \(name)")
-        .accessibilityHint("Tap to edit, long press and drag to reorder")
+        .accessibilityHint("Tap to edit, drag handle to reorder")
         .accessibilityActions {
             if let onMoveUp = onMoveUp, !isFirst {
                 Button("Move Up") {
@@ -670,9 +550,6 @@ struct ExerciseRowContent: View {
                 Button("Move Down") {
                     onMoveDown()
                 }
-            }
-            Button("Delete", role: .destructive) {
-                onDelete()
             }
         }
     }
