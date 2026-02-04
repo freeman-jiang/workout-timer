@@ -133,6 +133,16 @@ struct WorkoutEditorView: View {
         }
         .onDisappear {
             saveTask?.cancel()
+
+            // Force immediate save if workout is valid (prevents data loss on quick dismiss)
+            if isValid {
+                updateBinding()
+                if isNewWorkout {
+                    onSave?(workout)
+                } else {
+                    WorkoutStorage.shared.updateWorkout(workout)
+                }
+            }
             // If new workout was never valid, it will be cleaned up by the parent
         }
     }
@@ -338,7 +348,6 @@ struct WorkoutEditorView: View {
         }
 
         // Mark that this workout has been valid at least once
-        let isFirstValidSave = !hasBeenValidOnce
         if !hasBeenValidOnce {
             hasBeenValidOnce = true
         }
@@ -355,11 +364,12 @@ struct WorkoutEditorView: View {
             await MainActor.run {
                 updateBinding()
 
-                // For new workouts, call onSave to add to the list
-                if isNewWorkout && isFirstValidSave, let onSave = onSave {
+                // Always persist to disk when showing "Saved"
+                if let onSave = onSave {
+                    // Use onSave callback (handles both new and existing workouts)
                     onSave(workout)
                 } else if !isNewWorkout {
-                    // Persist to storage for existing workouts
+                    // Fallback for existing workouts without onSave callback
                     WorkoutStorage.shared.updateWorkout(workout)
                 }
                 saveStatus = .saved

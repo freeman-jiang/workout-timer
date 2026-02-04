@@ -47,9 +47,13 @@ struct WorkoutsListView: View {
             if let index = workouts.firstIndex(where: { $0.id == workout.id }) {
                 WorkoutEditorView(
                     workout: $workouts[index],
-                    isNewWorkout: false,
+                    isNewWorkout: true,
                     onDelete: { toDelete in
                         workouts.removeAll { $0.id == toDelete.id }
+                        WorkoutStorage.shared.saveWorkouts(workouts)
+                    },
+                    onSave: { _ in
+                        // Save the entire workouts array (which already contains the new workout)
                         WorkoutStorage.shared.saveWorkouts(workouts)
                     }
                 )
@@ -67,6 +71,10 @@ struct WorkoutsListView: View {
                     isNewWorkout: false,
                     onDelete: { toDelete in
                         workouts.removeAll { $0.id == toDelete.id }
+                        WorkoutStorage.shared.saveWorkouts(workouts)
+                    },
+                    onSave: { _ in
+                        // Save the entire workouts array whenever "Saved" toast appears
                         WorkoutStorage.shared.saveWorkouts(workouts)
                     }
                 )
