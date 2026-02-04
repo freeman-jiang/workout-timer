@@ -24,6 +24,7 @@ private struct ToneRequest {
     let samplesToPlay: Int
     let fadeInSamples: Int
     let fadeOutSamples: Int
+    let amplitude: Float
 }
 
 @MainActor
@@ -32,7 +33,10 @@ final class AudioManager {
     private var sourceNode: AVAudioSourceNode!
 
     private let sampleRate: Float = 48000
-    private let amplitude: Float = 0.6
+
+    private var volume: Float {
+        AppSettings.shared.volume
+    }
 
     // Thread-safe communication with audio thread via lock
     private let lock = NSLock()
@@ -45,16 +49,17 @@ final class AudioManager {
     private var fadeInSamples: Int = 200
     private var fadeOutSamples: Int = 200
     private var currentSample: Int = 0
+    private var currentAmplitude: Float = 1.0
 
     // Scheduled sound work items
     private var scheduledWorkItems: [DispatchWorkItem] = []
 
     // Frequency definitions
     private let frequencies: [ToneType: Float] = [
-        .countdown: 330,    // E4 - countdown beeps
-        .highPitch: 440,    // A4 - work/rest phase transition
-        .lowPitch: 440,     // A4 - work/rest phase transition
-        .complete: 440      // A4 - workout complete
+        .countdown: 523,    // C5 - countdown beeps
+        .highPitch: 659,    // E5 - work/rest phase transition
+        .lowPitch: 659,     // E5 - work/rest phase transition
+        .complete: 659      // E5 - workout complete
     ]
 
     init() {
@@ -90,6 +95,7 @@ final class AudioManager {
                 self.samplesToPlay = request.samplesToPlay
                 self.fadeInSamples = request.fadeInSamples
                 self.fadeOutSamples = request.fadeOutSamples
+                self.currentAmplitude = request.amplitude
                 self.currentPhase = 0
                 self.currentSample = 0
                 self.pendingRequest = nil
@@ -109,7 +115,7 @@ final class AudioManager {
                         envelope = Float(remaining) / Float(self.fadeOutSamples)
                     }
 
-                    samples[i] = sin(self.currentPhase) * self.amplitude * envelope
+                    samples[i] = sin(self.currentPhase) * self.currentAmplitude * envelope
                     self.currentPhase += phaseDelta
                     if self.currentPhase >= 2.0 * Float.pi {
                         self.currentPhase -= 2.0 * Float.pi
@@ -145,7 +151,8 @@ final class AudioManager {
             frequency: frequency,
             samplesToPlay: totalSamples,
             fadeInSamples: 200,
-            fadeOutSamples: 200
+            fadeOutSamples: 200,
+            amplitude: volume
         )
 
         lock.lock()

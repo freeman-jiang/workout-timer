@@ -12,6 +12,9 @@ struct TimerView: View {
     // Celebration state
     @State private var showingWorkoutComplete = false
 
+    // Settings state
+    @State private var showingSettings = false
+
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
@@ -185,6 +188,25 @@ struct TimerView: View {
             }
             .navigationDestination(isPresented: $showingWorkoutsList) {
                 WorkoutsListView(workouts: $workouts)
+            }
+            .toolbar {
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        showingSettings = true
+                    } label: {
+                        Image(systemName: "gearshape")
+                            .font(.system(size: 14, weight: .medium))
+                            .foregroundStyle(.white)
+                            .frame(width: 36, height: 36)
+                            .glassCircle()
+                    }
+                    .buttonStyle(IconGlassButtonStyle())
+                }
+            }
+            .sheet(isPresented: $showingSettings) {
+                SettingsView()
+                    .presentationDetents([.medium])
+                    .presentationDragIndicator(.visible)
             }
         }
         .tint(.white)

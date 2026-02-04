@@ -30,6 +30,8 @@
 		001000000025 /* WorkoutCompleteOverlay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 002000000025 /* WorkoutCompleteOverlay.swift */; };
 		C1812B162F2C22E700CBA6BB /* IconExportView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1812B152F2C22E700CBA6BB /* IconExportView.swift */; };
 		C1B79F642F2C1D410007DBC3 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C1B79F632F2C1D410007DBC3 /* PrivacyInfo.xcprivacy */; };
+		C1EBCAA22F32C9CE000FB97B /* AppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EBCAA12F32C9CE000FB97B /* AppSettings.swift */; };
+		C1EBCAA42F32CA00000FB97B /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C1EBCAA32F32CA00000FB97B /* SettingsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -57,6 +59,8 @@
 		003000000001 /* WorkoutTimer.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = WorkoutTimer.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		C1812B152F2C22E700CBA6BB /* IconExportView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = IconExportView.swift; path = WorkoutTimer/Views/IconExportView.swift; sourceTree = "<group>"; };
 		C1B79F632F2C1D410007DBC3 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		C1EBCAA12F32C9CE000FB97B /* AppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppSettings.swift; sourceTree = "<group>"; };
+		C1EBCAA32F32CA00000FB97B /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -119,6 +123,7 @@
 				002000000002 /* TimerView.swift */,
 				002000000003 /* WorkoutsListView.swift */,
 				002000000004 /* WorkoutEditorView.swift */,
+				C1EBCAA32F32CA00000FB97B /* SettingsView.swift */,
 				005000000009 /* Components */,
 			);
 			path = Views;
@@ -138,6 +143,7 @@
 			isa = PBXGroup;
 			children = (
 				002000000015 /* WorkoutStorage.swift */,
+				C1EBCAA12F32C9CE000FB97B /* AppSettings.swift */,
 			);
 			path = Storage;
 			sourceTree = "<group>";
@@ -268,6 +274,8 @@
 				001000000015 /* WorkoutStorage.swift in Sources */,
 				001000000021 /* Typography.swift in Sources */,
 				001000000022 /* AnimationConstants.swift in Sources */,
+				C1EBCAA22F32C9CE000FB97B /* AppSettings.swift in Sources */,
+				C1EBCAA42F32CA00000FB97B /* SettingsView.swift in Sources */,
 				001000000023 /* GlassButtonStyle.swift in Sources */,
 				001000000024 /* AnimatedPhaseBackground.swift in Sources */,
 				001000000025 /* WorkoutCompleteOverlay.swift in Sources */,
@@ -411,7 +419,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
@@ -440,7 +448,7 @@
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = UIInterfaceOrientationPortrait;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
