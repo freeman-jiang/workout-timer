@@ -145,18 +145,28 @@ struct WorkoutsListView: View {
     }
 
     private var workoutsList: some View {
-        ScrollView {
-            LazyVStack(spacing: 12) {
-                ForEach(validWorkouts, id: \.workout.id) { item in
-                    GlassWorkoutCard(workout: item.workout) {
-                        editingWorkoutIndex = item.index
+        List {
+            ForEach(Array(workouts.enumerated()), id: \.element.id) { index, workout in
+                // Skip invalid workouts (empty name or no exercises)
+                if !workout.name.trimmingCharacters(in: .whitespaces).isEmpty && !workout.exercises.isEmpty {
+                    GlassWorkoutCard(workout: workout) {
+                        editingWorkoutIndex = index
                     }
+                    .listRowBackground(Color.clear)
+                    .listRowSeparator(.hidden)
+                    .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                    .contentShape(.dragPreview, RoundedRectangle(cornerRadius: 16))
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.top, 16)
-            .padding(.bottom, 32)
+            .onMove { from, to in
+                workouts.move(fromOffsets: from, toOffset: to)
+                WorkoutStorage.shared.saveWorkouts(workouts)
+                HapticManager.shared.buttonTap()
+            }
         }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .environment(\.defaultMinListRowHeight, 0)
     }
 }
 
@@ -201,6 +211,10 @@ struct GlassWorkoutCard: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
+            .background(
+                RoundedRectangle(cornerRadius: 16)
+                    .fill(Color(white: 0.15))
+            )
             .glassBackground(cornerRadius: 16)
         }
         .buttonStyle(GlassButtonStyle())
